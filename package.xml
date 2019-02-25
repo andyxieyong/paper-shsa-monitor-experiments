@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>demo</name>
+  <version>0.1.0</version>
+  <description>The demo package</description>
+
+  <maintainer email="denise.ratasich@tuwien.ac.at">Denise Ratasich</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- see also launch files -->
+  <exec_depend>p2os</exec_depend>
+  <exec_depend>hokuyo_node</exec_depend>
+  <exec_depend>pioneer_teleop</exec_depend>
+  <exec_depend>gmapping</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>shsa_ros</exec_depend>
+
+</package>
