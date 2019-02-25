@@ -1,0 +1,87 @@
+<!--
+
+Launches SHSA demonstration.
+
+Needs pioneer_teleop, emergency_stop (pkg: general-ros-modules) and
+amcl, map_server for localization (pkg: navigation).
+Source the workspace containing general-ros-modules.
+
+2019-02-18
+Denise Ratasich
+
+-->
+
+<launch>
+  <!-- hostname of your notebook -->
+  <arg name="notebook" default="notebook" />
+  <!-- default hostname of the robot -->
+  <arg name="robot" default="daisy" />
+  <!-- default hostname of the robot's pi -->
+  <arg name="robot-pi" default="daisy-pi" />
+  <!-- map -->
+  <arg name="map" default="$(find demo)/config/map.yaml"/>
+
+  <!-- machines -->
+  <machine name="notebook" address="$(arg notebook)" default="true"/>
+  <machine name="robot" address="$(arg robot)"
+	   env-loader="/opt/ros/indigo/env.sh" />
+  <machine name="robot-pi" address="$(arg robot-pi)"
+	   env-loader="/opt/ros/kinetic/env_pi.bash" />
+
+
+  <!-- laser -->
+  <remap from="/hokuyo/scan" to="/scan" />
+  <node machine="robot" ns="hokuyo" name="hokuyo_node"
+        pkg="hokuyo_node" type="hokuyo_node" output="screen">
+    <param name="port" value="/dev/ttyACM0" />
+  </node>
+  <node name="laser_tf_broadcaster" pkg="tf2_ros" type="static_transform_publisher"
+        args="0.16 0 0 0 0 0 base_link laser" />
+
+  <!-- localization -->
+  <node name="amcl" pkg="amcl" type="amcl" output="screen">
+    <param name="scan" value="/scan"/>
+    <param name="update_min_d" value="0.01"/>
+    <param name="update_min_a" value="0.02"/>
+  </node>
+  <node name="map" pkg="map_server" type="map_server"
+        args="$(arg map)" output="screen"/>
+
+  <!-- p2os driver -->
+  <node machine="robot" ns="p2os" name="p2os_driver"
+	pkg="p2os_driver" type="p2os_driver"
+	output="screen">
+    <param name="port" value="/dev/ttyTHS1" /> <!-- interface to p2os-uc -->
+    <param name="use_sonar" value="False" />
+    <param name="pulse" value="1.0" /> <!-- turn annoying beep of -->
+  </node>
+
+
+  <!-- drive control -->
+  <node name="teleop" pkg="pioneer_teleop" type="keyboard" output="screen" />
+  <remap from="/wanderer/scan" to="/scan" />
+  <node name="wanderer" pkg="wanderer" type="wanderer.py" output="screen" />
+  <!-- install mux between teleop and wanderer -->
+  <node name="mux_cmdvel" pkg="topic_tools" type="mux"
+        args="/cmd_vel /teleop/cmd_vel /wanderer/cmd_vel mux:=mux_cmdvel"
+        output="screen" />
+
+  <!-- collision avoidance -->
+  <remap from="/dmin_calculator/scan" to="/scan" />
+  <remap from="/dmin_calculator/dmin" to="/emergency_stop/dmin" />
+  <node name="dmin_calculator" pkg="emergency_stop" type="dmin_calculator.py"
+        output="screen" />
+  <remap from="/emergency_stop/cmd_vel_in" to="/cmd_vel" />
+  <remap from="/emergency_stop/cmd_vel_out" to="/p2os/cmd_vel" />
+  <node name="emergency_stop" pkg="emergency_stop" type="emergency_stop.py"
+        output="screen">
+    <param name="dsafe_bottom" value="0.49" />
+    <param name="dsafe_top" value="0.51" />
+  </node>
+
+  <!-- enable motors (this node will quit after 3s) -->
+  <node name="rostopic_pub_enable_motors"
+	pkg="rostopic" type="rostopic"
+	args="pub /p2os/cmd_motor_state p2os_msgs/MotorState 1 -1" />
+
+</launch>

@@ -22,7 +22,7 @@ Start application, [Daisy] starts moving around (turning when it comes near an o
 $ docker run --rm -it --network=host \
     -v /home/denise/.ssh/:/root/.ssh/ \
     -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    ros:daisy roslaunch demo demo.launch
+    ros:daisy roslaunch demo demo.launch notebook:=<your hostname>
 ```
 
 Enable motors (if necessary):
@@ -79,8 +79,13 @@ $ x11docker --hostnet --home ros:gui rviz
 ## Log
 
 ```bash
-$ docker run --rm -it --network=host ros:daisy rosbag TODO
+$ docker run --rm -it --network=host \
+    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
+    ros:daisy bash
+# rosbag record -o /catkin_ws/src/demo/log/topics /cmd_vel /emergency_stop/dmin
 ```
+Unfortunately, docker doesn't wait until rosbag finishes when pressing `Ctrl-C`.
+So log over the `bash` in a container.
 
 
 ## Create a Map
@@ -103,9 +108,10 @@ so you can open it in rviz.
 Save map:
 ```bash
 $ docker run --rm -it --network=host \
-    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/demo
+    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/demo/
     ros:daisy rosrun map_server map_saver -f /demo/config/map
 ```
+Adapt the image path in `map.yaml` to `./map.pgm`.
 
 
 [docker images]: https://github.com/dratasich/docker
