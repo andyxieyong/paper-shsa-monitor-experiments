@@ -1,0 +1,11 @@
+<launch>
+  <arg name="problogpaths" default="[/python_ws/shsa-prolog/model]" />
+
+  <include file="$(find shsa_ros)/launch/monitor.launch">
+    <arg name="model" value="$(find demo)/config/dmin.pl" />
+    <arg name="variable" value="dmin" />
+    <arg name="problogpaths" value="$(arg problogpaths)" />
+    <arg name="debug" value="True" />
+    <arg name="trigger" value="False" />
+  </include>
+</launch>
