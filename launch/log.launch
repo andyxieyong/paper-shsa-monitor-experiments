@@ -1,0 +1,4 @@
+<launch>
+  <node name="rosbag" pkg="rosbag" type="record"
+        args="-o /catkin_ws/src/demo/log/topics /emergency_stop/dmin /p2os/sonar /scan"/>
+</launch>

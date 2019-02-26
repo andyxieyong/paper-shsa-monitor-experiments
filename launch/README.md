@@ -56,9 +56,8 @@ $ docker run --rm -it --network=host ros:daisy rosrun topic_tools mux_select mux
 Start monitoring:
 ```bash
 $ docker run --rm -it --network=host \
-    -v /home/denise/ws/ros/shsa/src/saso2019/ \
-    ros:daisy roslaunch shsa_ros monitor.launch \
-    modelfile:=/catkin_ws/src/demo/config/dmin.pl
+    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
+    ros:shsa-prolog roslaunch demo monitor.launch
 ```
 
 Attack the laser scanner used to avoid collisions:
@@ -70,9 +69,10 @@ $ docker run --rm -it --network=host ros:daisy roslaunch shsa_ros attack.launch
 ## Visualization
 
 ```bash
+$ x11docker --hostnet --home ros:gui rviz
 $ x11docker --hostnet ros:gui rqt_plot /emergency_stop/dmin/data /dmin_monitor/value_0/data /dmin_monitor/value_1/data
 $ x11docker --hostnet ros:gui rqt_graph
-$ x11docker --hostnet --home ros:gui rviz
+$ x11docker --hostnet ros:gui rosrun rqt_tf_tree rqt_tf_tree
 ```
 
 
@@ -81,11 +81,8 @@ $ x11docker --hostnet --home ros:gui rviz
 ```bash
 $ docker run --rm -it --network=host \
     -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    ros:daisy bash
-# rosbag record -o /catkin_ws/src/demo/log/topics /cmd_vel /emergency_stop/dmin
+    ros:daisy roslaunch demo log.launch
 ```
-Unfortunately, docker doesn't wait until rosbag finishes when pressing `Ctrl-C`.
-So log over the `bash` in a container.
 
 
 ## Create a Map

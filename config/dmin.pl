@@ -13,8 +13,8 @@
 %
 
 % dmin
-function(dmin, r1, d_2d).
-function(d_2d, r2, d_3d).
+function(dmin, r1, [d_2d]).
+function(d_2d, r2, [d_3d]).
 function(d_2d, r3, [map, pose]).
 function(dmin, r4, [dmin_last, speed]).
 function(dmin_last, r5, [dmin]).
