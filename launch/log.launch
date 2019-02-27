@@ -1,4 +1,6 @@
 <launch>
+  <arg name="topics" default="/dmin_monitor/debug /cmd_vel /emergency_stop/dmin /p2os/sonar /scan" />
+
   <node name="rosbag" pkg="rosbag" type="record"
-        args="-o /catkin_ws/src/demo/log/topics /emergency_stop/dmin /p2os/sonar /scan"/>
+        args="-o /catkin_ws/src/demo/log/topics $(arg topics)"/>
 </launch>

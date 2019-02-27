@@ -52,7 +52,7 @@ Denise Ratasich
 	pkg="p2os_driver" type="p2os_driver"
 	output="screen">
     <param name="port" value="/dev/ttyTHS1" /> <!-- interface to p2os-uc -->
-    <param name="use_sonar" value="False" />
+    <param name="use_sonar" value="True" />
     <param name="pulse" value="1.0" /> <!-- turn annoying beep of -->
   </node>
 
