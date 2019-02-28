@@ -66,7 +66,18 @@ $ docker run --rm -it --network=host ros:daisy roslaunch shsa_ros attack.launch
 ```
 
 
+## Log
+
+```bash
+$ docker run --rm -it --network=host \
+    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
+    ros:daisy roslaunch demo log.launch
+```
+
+
 ## Visualization
+
+### Runtime information
 
 ```bash
 $ x11docker --hostnet --home ros:gui rviz
@@ -75,13 +86,17 @@ $ x11docker --hostnet ros:gui rqt_graph
 $ x11docker --hostnet ros:gui rosrun rqt_tf_tree rqt_tf_tree
 ```
 
-
-## Log
+### Plot logged data
 
 ```bash
-$ docker run --rm -it --network=host \
-    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    ros:daisy roslaunch demo log.launch
+$ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments \
+    ros:pandas ~/plot/plt_monitor.py ~/log/topics_<timestamp>.bag
+```
+
+Plot specific signals with:
+```bash
+$ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/ \
+    ros:pandas -- bag_plot -b ~/log/topics_<timestamp>.bag -k /dmin_monitor/debug/outputs/0/bot /dmin_monitor/debug/outputs/1/bot /dmin_monitor/debug/outputs/2/bot
 ```
 
 
