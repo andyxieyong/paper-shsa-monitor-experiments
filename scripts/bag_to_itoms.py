@@ -112,33 +112,15 @@ def convert_to_itom(signal, msg):
     ## COPIED end
     return itom
 
-# all itoms
+# all itoms per reception timestamp
 itoms = []
 for t, topic, msg in msgs:
     # a topic may contain several signals
     for s in topic2signals[topic]:
-        itom = convert_to_itom(s, msg)
-        itoms.append(itom)
+        itoms.append((t, convert_to_itom(s, msg)))
 
 print "number of itoms: {}".format(len(itoms))
-
-# collect itoms for monitor steps
-inputs = []
-t_last = itoms[-1].t
-itoms_per_step = Itoms()
-# reverse order to take latest itom of an input signal
-for n in range(len(itoms)-1, 0, -1):
-    itom = itoms[n]
-    # add itom if not yet used in step
-    if itom.name not in itoms_per_step.keys():
-        itoms_per_step[itom.name] = itom
-    if len(itoms_per_step) < len(signals):
-        continue
-    # finish step
-    inputs.insert(0, itoms_per_step)
-    itoms_per_step = Itoms()
-
-print "number of steps: {}".format(len(inputs))
+assert len(msgs) == len(itoms)
 
 
 #
@@ -147,7 +129,8 @@ print "number of steps: {}".format(len(inputs))
 
 data = {
     'manipulated': False,
-    'inputs': inputs,
+    'itoms': itoms,
+    'signals': signals,
 }
 
 with open(args.output, 'wb') as f:

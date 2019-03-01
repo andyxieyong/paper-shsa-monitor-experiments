@@ -26,6 +26,32 @@ class Emulator(object):
         """Returns the monitor."""
         return self.__monitor
 
+    def collect_inputs(self, data, period):
+        """Collects itoms for monitor steps with given period (in seconds).
+
+        Simulates the reception of itoms.
+
+        """
+        # itoms: [(t_reception, itom),..]
+        itoms = sorted(data['itoms'], key=lambda msg: msg[0])
+        signals = data['signals']
+        # collect an itom of each signal for every monitor step
+        inputs = []
+        port = Itoms()
+        t_last = itoms[0][0]  # t_reception of first itom
+        for n, (t_cur, itom) in enumerate(itoms):
+            # read itom into port
+            port[itom.name] = itom
+            # be sure to have received an itom of every signal
+            if set(port.keys()) != set(signals):
+                continue
+            # ready to execute monitor for the first time
+            if t_cur > t_last + period*1e9:
+                inputs.append(Itoms(port))
+                t_last = t_cur  # current time stamp
+        print "number of steps: {}".format(len(inputs))
+        return inputs
+
     def __validate(self, (outputs, values, error, failed)):
         assert self.__debug is not None
         # TODO check reproducability (output is the same like in the ROS run)
@@ -80,6 +106,7 @@ if __name__ == '__main__':
         data = pickle.load(f)
 
     emulator = Emulator()
+    data['inputs'] = emulator.collect_inputs(data, 0.1)
     data['outputs'] = emulator.run(data)
     data['substitutions'] = emulator.monitor.substitutions
 
