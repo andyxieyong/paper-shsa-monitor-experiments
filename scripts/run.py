@@ -21,6 +21,11 @@ class Emulator(object):
                                      librarypaths=["/python_ws/shsa-prolog/model"])
         self.__monitor.set_debug_callback(self.__debug_callback)
 
+    @property
+    def monitor(self):
+        """Returns the monitor."""
+        return self.__monitor
+
     def __validate(self, (outputs, values, error, failed)):
         assert self.__debug is not None
         # TODO check reproducability (output is the same like in the ROS run)
@@ -32,7 +37,7 @@ class Emulator(object):
         self.__debug = {
             'inputs': inputs,
             'outputs': outputs,
-            'values': values,
+            'values': list(values),
             'error': error,
             'failed': failed,
         }
@@ -40,6 +45,9 @@ class Emulator(object):
     def __step(self, itoms):
         """Execute a monitor step."""
         failed = self.__monitor.monitor(itoms)
+        failed = self.__monitor.substitutions.index(failed)
+        return self.__debug['outputs'], self.__debug['values'], \
+            self.__debug['error'], failed
 
     def run(self, data):
         inputs = data['inputs']
@@ -47,17 +55,20 @@ class Emulator(object):
         # in case align generated the data we have sth to compare to
         try:
             self.__manipulated = data['manipulated']
-            outputs = data['outputs']
+            exp_outputs = data['outputs']
             assert len(inputs) == len(outputs)
         except Exception as e:
             pass
+        # run monitor for each Itoms in inputs
+        act_outputs = []
         for n in range(len(inputs)):
             # execute monitor
-            self.__step(inputs[n])
+            output = self.__step(inputs[n])
+            act_outputs.append(output)
             # check
             if not manipulated:
-                self.__validate(outputs[n])
-
+                self.__validate(exp_outputs[n])
+        return act_outputs
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""Run monitor with given sequence of itoms.""")
@@ -69,4 +80,8 @@ if __name__ == '__main__':
         data = pickle.load(f)
 
     emulator = Emulator()
-    emulator.run(data)
+    data['outputs'] = emulator.run(data)
+    data['substitutions'] = emulator.monitor.substitutions
+
+    with open(args.picklefile, 'wb') as f:
+        pickle.dump(data, f, protocol=-1)
