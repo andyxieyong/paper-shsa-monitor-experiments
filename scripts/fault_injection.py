@@ -8,6 +8,7 @@ __author__ = Denise Ratasich
 
 import argparse
 import pickle
+import random
 
 from model.itom import Itom, Itoms
 from model.monitor import Monitor as SHSAMonitor
@@ -16,29 +17,71 @@ from model.monitor import Monitor as SHSAMonitor
 class FaultInjection(object):
     """Manipulates a list of itoms."""
 
-    def __init__(self):
-        self.__manipulated = False
+    def __init__(self, signal, timespan, faults=[]):
+        self.__signal = signal
+        self.__t_from = timespan[0]
+        self.__t_to = timespan[1]
+        self.__faults = faults
+        random.seed()
 
     @property
     def manipulated(self):
-        return self.__manipulated
+        return len(self.__faults) > 0
 
-    def time_shift(self, itoms, signal, dt):
-        """Shifts the reception of the itoms of the given signal by dt.
+    @property
+    def faults(self):
+        return self.__faults
 
-        itoms -- dictionary of itoms with key = reception time stamp
-        dt -- time in seconds to shift the itoms
-        """
-        pass
-        self.__manipulated = True
+    def delay(self, itoms, dt):
+        """Shifts the reception of the itoms of the given signal by dt."""
+        num_changed = 0
+        for n, (t, itom) in enumerate(itoms):
+            if itom.name == args.signal \
+               and itom.t > self.__t_from and itom.t < self.__t_to:
+                t = t + dt*1e9
+                itoms[n] = (t, itom)
+                num_changed = num_changed + 1
+        # re-sort itoms
+        itoms = sorted(itoms, key=lambda msg: msg[0])
+        print "[fault injection] delay {} messages by {} seconds".format(
+            num_changed, dt)
+        self.__faults.append((self.__t_from, self.__t_to, self.__signal,
+                              "delay by {}s".format(dt)))
+        return itoms
 
-    def add_random_noise(self, itoms, signal, snr):
-        pass
-        self.__manipulated = True
+    def add_random_noise(self, itoms, maximum):
+        num_changed = 0
+        for n, (t, itom) in enumerate(itoms):
+            if itom.name == args.signal \
+               and itom.t > self.__t_from and itom.t < self.__t_to:
+                noise = random.uniform(0, maximum)
+                try:
+                    itom.v = [x + noise for x in itom.v]
+                except TypeError as e:
+                    itom.v = itom.v + noise
+                itoms[n] = (t, itom)
+                num_changed = num_changed + 1
+        print "[fault injection] add random noise to {} messages".format(
+            num_changed)
+        self.__faults.append((self.__t_from, self.__t_to, self.__signal,
+                              "random noise [0,{}]".format(maximum)))
+        return itoms
 
-    def stuck_to_zero(self, itoms, signal, t_from, t_to):
-        pass
-        self.__manipulated = True
+    def stuck_at(self, itoms):
+        num_changed = 0
+        for n, (t, itom) in enumerate(itoms):
+            if itom.name == args.signal \
+               and itom.t > self.__t_from and itom.t < self.__t_to:
+                try:
+                    itom.v = [0 for x in itom.v]
+                except TypeError as e:
+                    itom.v = 0
+                itoms[n] = (t, itom)
+                num_changed = num_changed + 1
+        print "[fault injection] stuck-at 0 of {} messages".format(num_changed)
+        self.__faults.append((self.__t_from, self.__t_to, self.__signal,
+                              "stuck-at 0"))
+        return itoms
 
 
 if __name__ == '__main__':
@@ -47,29 +90,35 @@ if __name__ == '__main__':
                         help="""Data (pickle file) containing itoms.""")
     parser.add_argument("signal", type=str,
                         help="Signal to manipulate.")
-    parser.add_argument("-t", "--timeshift", type=float, default=0,
-                        help="Shift itoms by TIMESHIFT seconds.")
+    parser.add_argument("-t", "--timespan", metavar=("FROM", "TO"), type=float, nargs=2,
+                        help="Inject fault only FROM and TO time in seconds from start.")
+    parser.add_argument("-d", "--delay", type=float, default=0,
+                        help="Delay itoms (reception) by DELAY seconds.")
     parser.add_argument("-n", "--noise", type=float, default=0,
                         help="Add random noise, uniformly distributed from [0,NOISE].")
-    parser.add_argument("-s", "--stuck-at", metavar=("FROM", "TO"), type=float, nargs=2,
-                        help="Stuck to 0 between FROM and TO.")
+    parser.add_argument("-s", "--stuck-at", action='store_true',
+                        help="Stuck to a value.")
     args = parser.parse_args()
 
     with open(args.picklefile, 'rb') as f:
         data = pickle.load(f)
 
-    fi = FaultInjection()
+    itoms = sorted(data['itoms'], key=lambda msg: msg[0])
+    start = itoms[0][0]
+    fi = FaultInjection(args.signal, [t*1e9 + start for t in args.timespan],
+                        faults=data['faults'])
 
-    itoms = data['itoms']
-    if args.timeshift > 0:
-        itoms = fi.time_shift(args.time_shift)
+    if args.delay > 0:
+        itoms = fi.delay(itoms, args.delay)
     if args.noise > 0:
-        itoms = fi.add_random_noise(itoms, args.signal, args.noise)
-    if args.stuck_at is not None:
-        itoms = fi.stuck_at(itoms, args.signal, args.stuck_at[0], args.stuck_at[1])
+        itoms = fi.add_random_noise(itoms, args.noise)
+    if args.stuck_at:
+        itoms = fi.stuck_at(itoms)
 
+    print "[fault injection] number of itoms: {}".format(len(itoms))
     data['itoms'] = itoms
     data['manipulated'] = fi.manipulated
+    data['faults'] = fi.faults
 
     with open(args.picklefile, 'wb') as f:
         pickle.dump(data, f, protocol=-1)

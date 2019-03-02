@@ -68,10 +68,14 @@ bag = rosbag.Bag(args.bagfile)
 
 # get info dict
 info_dict = yaml.load(subprocess.Popen(['rosbag', 'info', '--yaml', args.bagfile], stdout=subprocess.PIPE).communicate()[0])
-print info_dict
 for t in topics:
     if t not in [info['topic'] for info in info_dict['topics']]:
         raise RuntimeError("topic {} not in bag file".format(t))
+
+print "start: {}".format(info_dict['start'])
+print "end: {}".format(info_dict['end'])
+print "duration: {}".format(info_dict['duration'])
+print "topics: {}".format(",".join([info['topic'] for info in info_dict['topics']]))
 
 
 #
@@ -88,7 +92,7 @@ for topic, msg, t in bag.read_messages():
 # sort by time stamps
 msgs = sorted(msgs, key=lambda msg: msg[0])
 
-print "number of msgs: {}".format(len(msgs))
+print "[bag to itoms] number of msgs: {}".format(len(msgs))
 
 
 #
@@ -119,7 +123,7 @@ for t, topic, msg in msgs:
     for s in topic2signals[topic]:
         itoms.append((t, convert_to_itom(s, msg)))
 
-print "number of itoms: {}".format(len(itoms))
+print "[bag to itoms] number of itoms: {}".format(len(itoms))
 assert len(msgs) == len(itoms)
 
 
@@ -131,6 +135,7 @@ data = {
     'manipulated': False,
     'itoms': itoms,
     'signals': signals,
+    'faults': [],
 }
 
 with open(args.output, 'wb') as f:

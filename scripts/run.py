@@ -47,9 +47,9 @@ class Emulator(object):
                 continue
             # ready to execute monitor for the first time
             if t_cur > t_last + period*1e9:
-                inputs.append(Itoms(port))
+                inputs.append((t_cur, Itoms(port)))
                 t_last = t_cur  # current time stamp
-        print "number of steps: {}".format(len(inputs))
+        print "[run] number of steps: {}".format(len(inputs))
         return inputs
 
     def __validate(self, (outputs, values, error, failed)):
@@ -87,10 +87,10 @@ class Emulator(object):
             pass
         # run monitor for each Itoms in inputs
         act_outputs = []
-        for n in range(len(inputs)):
+        for n, (t, itoms) in enumerate(inputs):
             # execute monitor
-            output = self.__step(inputs[n])
-            act_outputs.append(output)
+            output = self.__step(itoms)
+            act_outputs.append(tuple([t]) + output)
             # check
             if not manipulated:
                 self.__validate(exp_outputs[n])
