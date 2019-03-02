@@ -20,6 +20,12 @@ $ docker --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/dem
     paper:shsa-prolog /catkin_ws/src/demo/scripts/bag_to_itoms.py -h
 ```
 
+Fault injection:
+```bash
+$ docker --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
+    paper:shsa-prolog /catkin_ws/src/demo/scripts/fault_injection.py -h
+```
+
 Run monitor stand-alone (without ROS)
 -------------------------------------
 
