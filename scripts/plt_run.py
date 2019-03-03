@@ -70,19 +70,26 @@ df_failed = pd.DataFrame(failed, index=time)
 #
 
 params = matplotlib.figure.SubplotParams(left=0.1, right=0.98, bottom=0.08, top=0.98, hspace=0.1)
+basecolors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+lightcolors = [colors.colorConverter.to_rgba(c, alpha=0.3) for c in basecolors]
 
 fig, axes = plt.subplots(4, figsize=(10,8), sharex=True, subplotpars=params)
 axidx = 0
 
 # plot output values
-for c in df_values.columns:
-    axes[axidx].plot(df_values.index, df_values[c], label="s{}".format(c),
-                     marker='.', linestyle='')
-    # TODO errorbar
-    # yerr = df[keytop] - df[keybot]
-    # y = df[keybot] + yerr/2
-    # axes[axidx].errorbar(df.index, y, yerr=yerr, label="s{}".format(o),
-    #                  marker='.', linestyle='')
+for i, c in enumerate(df_values.columns):
+    try:
+        axes[axidx].plot(df_values.index, df_values[c], label="s{}".format(c),
+                         color=basecolors[i], marker='.', linestyle='')
+    except ValueError as e:
+        # df_values contains intervals -> plot midpoint and error
+        lo = [v[0][0] for v in df_values[c]]
+        hi = [v[0][1] for v in df_values[c]]
+        mid = [v.midpoint[0][0] for v in df_values[c]]
+        axes[axidx].fill_between(df_values.index, y1=lo, y2=hi, step='pre',
+                                 facecolor=lightcolors[i])
+        axes[axidx].plot(df_values.index, mid, label="s{}".format(c),
+                         color=basecolors[i], marker='.', linestyle='')
 axes[axidx].set_ylabel("dmin\noutput per substitution")
 axes[axidx].legend()
 
@@ -94,10 +101,10 @@ for t0, t1, signal, desc in data['faults']:
     t0 = (float(t0) - time_start)/1e9
     t1 = (float(t1) - time_start)/1e9
     y = signal2substitution_idx[signal]
-    axes[axidx].plot([t0, t1], [y, y], linestyle='-')
+    axes[axidx].plot([t0, t1], [y, y], marker='s', linestyle='-', linewidth=2)
     axes[axidx].text(t0, y-0.5, "{}\n{}".format(signal, desc))
 axes[axidx].set_ylabel("faults injected")
-axes[axidx].set_yticks(range(-1, len(substitutions)))
+axes[axidx].set_yticks(range(0, len(substitutions)))
 axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
 
 axidx = axidx + 1
