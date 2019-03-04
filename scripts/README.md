@@ -40,6 +40,6 @@ Plot monitor output
 -------------------
 
 ```bash
-$ docker --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
-    paper:shsa-prolog /catkin_ws/src/demo/scripts/plt_run.py -h
+$ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ paper:shsa-prolog -- \
+    ~/scripts/plt_run.py -e ~/scripts/fig.pdf ~/scripts/latest.bag.obj
 ```

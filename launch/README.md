@@ -1,6 +1,6 @@
 # Demo Commands
 
-Uses custom [docker images] for demos with [SHSA] and [Daisy].
+Uses [custom docker image] for demos with [SHSA] and [Daisy].
 
 The commands below demonstrate [shsa-prolog] for the [SASO 2019](https://saso2019.cs.umu.se/) paper:
 *"Fault Detection exploiting Implicit Redundancy with Uncertainties in Space and Time"*
@@ -22,12 +22,12 @@ Start application, [Daisy] starts moving around (turning when it comes near an o
 $ docker run --rm -it --network=host \
     -v /home/denise/.ssh/:/root/.ssh/ \
     -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    ros:daisy roslaunch demo demo.launch notebook:=<your hostname>
+    paper:shsa-prolog roslaunch demo demo.launch notebook:=<your hostname>
 ```
 
 Enable motors (if necessary):
 ```bash
-$ docker run --rm -it --network=host ros:daisy roslaunch shsa_ros enablemotors.launch
+$ docker run --rm -it --network=host paper:shsa-prolog roslaunch shsa_ros enablemotors.launch
 ```
 
 Set initial pose for SLAM (amcl node) via rviz.
@@ -41,13 +41,13 @@ To reuse configs for rviz use option `--home` of `x11docker`.
 Select tele-operation (default `/teleop/cmd_vel` used):
 
 ```bash
-$ docker run --rm -it --network=host ros:daisy rosrun topic_tools mux_select mux_cmdvel /teleop/cmd_vel
+$ docker run --rm -it --network=host paper:shsa-prolog rosrun topic_tools mux_select mux_cmdvel /teleop/cmd_vel
 ```
 
 Or wanderer:
 
 ```bash
-$ docker run --rm -it --network=host ros:daisy rosrun topic_tools mux_select mux_cmdvel /wanderer/cmd_vel
+$ docker run --rm -it --network=host paper:shsa-prolog rosrun topic_tools mux_select mux_cmdvel /wanderer/cmd_vel
 ```
 
 
@@ -57,12 +57,12 @@ Start monitoring:
 ```bash
 $ docker run --rm -it --network=host \
     -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    ros:shsa-prolog roslaunch demo monitor.launch
+    paper:shsa-prolog roslaunch demo monitor.launch
 ```
 
 Attack the laser scanner used to avoid collisions:
 ```bash
-$ docker run --rm -it --network=host ros:daisy roslaunch shsa_ros attack.launch
+$ docker run --rm -it --network=host paper:shsa-prolog roslaunch shsa_ros attack.launch
 ```
 
 
@@ -71,11 +71,13 @@ $ docker run --rm -it --network=host ros:daisy roslaunch shsa_ros attack.launch
 ```bash
 $ docker run --rm -it --network=host \
     -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    ros:daisy roslaunch demo log.launch
+    paper:shsa-prolog roslaunch demo log.launch
 ```
 
 
 ## Visualization
+
+Uses [docker GUI image] in addition.
 
 ### Runtime information
 
@@ -90,13 +92,13 @@ $ x11docker --hostnet ros:gui rosrun rqt_tf_tree rqt_tf_tree
 
 ```bash
 $ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments \
-    ros:pandas ~/plot/plt_monitor.py ~/log/topics_<timestamp>.bag
+    paper:shsa-prolog ~/plot/plt_monitor.py ~/log/topics_<timestamp>.bag
 ```
 
 Plot specific signals with:
 ```bash
 $ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/ \
-    ros:pandas -- bag_plot -b ~/log/topics_<timestamp>.bag -k /dmin_monitor/debug/outputs/0/bot /dmin_monitor/debug/outputs/1/bot /dmin_monitor/debug/outputs/2/bot
+    paper:shsa-prolog -- bag_plot -b ~/log/topics_<timestamp>.bag -k /dmin_monitor/debug/outputs/0/bot /dmin_monitor/debug/outputs/1/bot /dmin_monitor/debug/outputs/2/bot
 ```
 
 
@@ -106,10 +108,10 @@ $ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiment
 $ docker run --rm -it --network=host \
     -v /home/denise/.ssh/:/root/.ssh/ \
     -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    ros:daisy roslaunch demo create_map.launch notebook:=<your hostname>
+    paper:shsa-prolog roslaunch demo create_map.launch notebook:=<your hostname>
 ```
 
-Visualize map:
+Visualize map ([docker GUI image]):
 ```bash
 $ x11docker --hostnet --home ros:gui rviz
 ```
@@ -121,12 +123,13 @@ Save map:
 ```bash
 $ docker run --rm -it --network=host \
     -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/demo/
-    ros:daisy rosrun map_server map_saver -f /demo/config/map
+    paper:shsa-prolog rosrun map_server map_saver -f /demo/config/map
 ```
 Adapt the image path in `map.yaml` to `./map.pgm`.
 
 
-[docker images]: https://github.com/dratasich/docker
+[custom docker image]: ./docker/README.md
+[docker GUI image]: https://github.com/dratasich/docker/ros-gui
 [Daisy]: https://tuw-cpsg.github.io/tutorials/daisy/
 [SHSA]: https://github.com/dratasich/shsa_ros
 [shsa-prolog]: https://github.com/dratasich/shsa-prolog
