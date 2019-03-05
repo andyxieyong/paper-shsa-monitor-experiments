@@ -80,18 +80,17 @@ class Emulator(object):
         print "[run] number of steps: {}".format(len(inputs))
         return inputs
 
-    def __validate(self, (outputs, values, error, failed)):
+    def __validate(self, (outputs, error, failed)):
         assert self.__debug is not None
         # TODO check reproducability (output is the same like in the ROS run)
         assert self.__debug['failed'] == failed
         # reset debug callback
         self.__debug = None
 
-    def __debug_callback(self, inputs, outputs, values, error, failed):
+    def __debug_callback(self, inputs, outputs, error, failed):
         self.__debug = {
             'inputs': inputs,
             'outputs': outputs,
-            'values': list(values),
             'error': error,
             'failed': failed,
         }
@@ -103,8 +102,7 @@ class Emulator(object):
             failed = self.__monitor.substitutions.index(failed)
         except ValueError as e:
             failed = -1
-        return self.__debug['outputs'], self.__debug['values'], \
-            self.__debug['error'], failed
+        return self.__debug['outputs'], self.__debug['error'], failed
 
     def run(self, data):
         inputs = data['inputs']

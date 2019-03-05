@@ -50,19 +50,40 @@ def substitution_index(s):
 # debug outputs of monitor
 # transpose
 time = []  # timestamp of monitor executions
-values = []  # output value per substitution
+outputs = []  # outputs per substitution per monitor step
 error = []  # error per substitution
 failed = []  # index of substitution that failed
-for t, _, v, e, f in data['outputs']:
+itoms = []  # collects all output itoms {'t': ts, }
+for t, o, err, f in data['outputs']:
     time.append(t)
-    values.append(v)
-    error.append(e)
+    # this conversion works only if
+    # the number of outputs matches the number of substitutions
+    step = {}
+    for sidx, itom in o:
+        try:
+            v = itom.v.midpoint[0][1]
+        except AttributeError as e:
+            v = itom.v
+        step[sidx] = v
+        # save itoms to plot (rectangles) if a timestamp is available
+        if itom.t is None:
+            continue
+        try:
+            itoms.append({'t_lo': itom.t[0][0], 't_hi': itom.t[0][1],
+                          'v_lo': itom.v[0][0], 'v_hi': itom.v[0][1]})
+        except TypeError as e:
+            # no interval
+            itoms.append({'t': itom.t, 'v': itom.v})
+    outputs.append(step)
+    error.append(err)
     failed.append(f)
 time_start = time[0]
 time = [float(t - time_start)/1e9 for t in time]
-df_values = pd.DataFrame(values, index=time)
 df_error = pd.DataFrame(error, index=time)
 df_failed = pd.DataFrame(failed, index=time)
+itoms = [{'t': float(d['t'] - time_start)/1e9, 'v': d['v']} for d in itoms]
+df_itoms = pd.DataFrame(itoms)
+df_values = pd.DataFrame(outputs, index=time)
 
 
 #
@@ -77,26 +98,25 @@ fig, axes = plt.subplots(4, figsize=(10,8), sharex=True, subplotpars=params)
 axidx = 0
 
 # plot output values
-for i, c in enumerate(df_values.columns):
+for c in df_values.columns:
     try:
         axes[axidx].plot(df_values.index, df_values[c], label="s{}".format(c),
-                         color=basecolors[i], marker='.', linestyle='')
+                         color=basecolors[c], marker='.', linestyle='')
     except ValueError as e:
         # df_values contains intervals -> plot midpoint and error
         lo = [v[0][0] for v in df_values[c]]
         hi = [v[0][1] for v in df_values[c]]
         mid = [v.midpoint[0][0] for v in df_values[c]]
         axes[axidx].fill_between(df_values.index, y1=lo, y2=hi, step='pre',
-                                 facecolor=lightcolors[i])
+                                 facecolor=lightcolors[c])
         axes[axidx].plot(df_values.index, mid, label="s{}".format(c),
-                         color=basecolors[i], marker='.', linestyle='')
+                         color=basecolors[c], marker='.', linestyle='')
 axes[axidx].set_ylabel("dmin\noutput per substitution")
 axes[axidx].legend()
 
 axidx = axidx + 1
 
 # plot injected faults
-print data['faults']
 for t0, t1, signal, desc in data['faults']:
     t0 = (float(t0) - time_start)/1e9
     t1 = (float(t1) - time_start)/1e9
