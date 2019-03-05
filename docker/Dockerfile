@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
         ros-kinetic-tf2-ros \
         ros-kinetic-gmapping \
         ros-kinetic-navigation \
+        ros-kinetic-image-transport \
         python-pip \
         python-matplotlib \
         python-pandas \
