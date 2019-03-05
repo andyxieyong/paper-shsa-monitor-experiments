@@ -31,7 +31,9 @@ class Emulator(object):
 
     def __apply_uncertainty(self, itom, t_error, v_error):
         # make time uncertain
-        # TODO
+        assert itom.t is not None
+        ts = itom.t
+        itom.t = interval([ts + t_error[0], ts + t_error[1]])
         # make value uncertain
         v = itom.v
         try:

@@ -55,10 +55,13 @@ class FaultInjection(object):
             if itom.name == args.signal \
                and itom.t > self.__t_from and itom.t < self.__t_to:
                 noise = random.uniform(0, maximum)
+                ts = itom.t  # keep timestamp
                 try:
                     itom.v = [x + noise for x in itom.v]
+                    itom.t = ts
                 except TypeError as e:
                     itom.v = itom.v + noise
+                    itom.t = ts
                 itoms[n] = (t, itom)
                 num_changed = num_changed + 1
         print "[fault injection] add random noise to {} messages".format(
@@ -72,10 +75,13 @@ class FaultInjection(object):
         for n, (t, itom) in enumerate(itoms):
             if itom.name == args.signal \
                and itom.t > self.__t_from and itom.t < self.__t_to:
+                ts = itom.t  # keep timestamp
                 try:
                     itom.v = [0 for x in itom.v]
+                    itom.t = ts
                 except TypeError as e:
                     itom.v = 0
+                    itom.t = ts
                 itoms[n] = (t, itom)
                 num_changed = num_changed + 1
         print "[fault injection] stuck-at 0 of {} messages".format(num_changed)
