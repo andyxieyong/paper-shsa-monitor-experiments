@@ -36,6 +36,8 @@ ADD https://api.github.com/repos/tuw-cpsg/general-ros-modules/compare/master...H
 RUN git clone https://github.com/tuw-cpsg/general-ros-modules.git
 ADD https://api.github.com/repos/dratasich/shsa_ros/compare/master...HEAD /dev/null
 RUN git clone https://github.com/dratasich/shsa_ros.git
+ADD https://api.github.com/repos/tuw-cpsg/tof-ros-interface/compare/master...HEAD /dev/null
+RUN git clone https://github.com/tuw-cpsg/tof-ros-interface.git
 # rosbag_pandas and dependencies
 ADD https://api.github.com/repos/eurogroep/rosbag_pandas/compare/master...HEAD /dev/null
 RUN git clone https://github.com/eurogroep/rosbag_pandas.git
