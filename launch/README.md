@@ -60,11 +60,6 @@ $ docker run --rm -it --network=host \
     paper:shsa-prolog roslaunch demo monitor.launch
 ```
 
-Attack the laser scanner used to avoid collisions:
-```bash
-$ docker run --rm -it --network=host paper:shsa-prolog roslaunch shsa_ros attack.launch
-```
-
 
 ## Log
 
@@ -81,8 +76,15 @@ Uses [docker GUI image] in addition.
 
 ### Runtime information
 
+Run `visualization.launch` and rviz:
 ```bash
-$ x11docker --hostnet --home ros:gui rviz
+$ x11docker --hostnet ros:gui rviz
+```
+To reuse configs for rviz use additional option
+`--homedir /path/to/paper-shsa-monitor-experiments` of `x11docker`.
+
+Other:
+```bash
 $ x11docker --hostnet ros:gui rqt_plot /emergency_stop/dmin/data /dmin_monitor/value_0/data /dmin_monitor/value_1/data
 $ x11docker --hostnet ros:gui rqt_graph
 $ x11docker --hostnet ros:gui rosrun rqt_tf_tree rqt_tf_tree

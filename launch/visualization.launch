@@ -1,0 +1,71 @@
+<!--
+
+Launches SHSA demonstration.
+
+Needs pioneer_teleop, emergency_stop (pkg: general-ros-modules) and
+amcl, map_server for localization (pkg: navigation).
+Source the workspace containing general-ros-modules.
+
+2019-02-18
+Denise Ratasich
+
+-->
+
+<launch>
+  <!-- hostname of your notebook -->
+  <arg name="notebook" default="notebook" />
+  <!-- default hostname of the robot -->
+  <arg name="robot" default="daisy" />
+  <!-- default hostname of the robot's pi -->
+  <arg name="robot-pi" default="daisy-pi" />
+  <!-- default hostname of the tof camera pi -->
+  <arg name="tof-camera-pi" default="tof-rpi" />
+
+  <!-- machines -->
+  <machine name="notebook" address="$(arg notebook)" default="true"/>
+  <machine name="robot" address="$(arg robot)"
+	   env-loader="/opt/ros/indigo/env.sh" />
+  <machine name="robot-pi" address="$(arg robot-pi)"
+	   env-loader="/opt/ros/kinetic/env_pi.bash" />
+  <machine name="tof-camera-pi" address="$(arg tof-camera-pi)"
+	   env-loader="/opt/ros/kinetic/env_pi.bash" />
+
+
+  <!-- laser -->
+  <remap from="/hokuyo/scan" to="/scan" />
+  <node machine="robot" ns="hokuyo" name="hokuyo_node"
+        pkg="hokuyo_node" type="hokuyo_node" output="screen">
+    <param name="port" value="/dev/ttyACM0" />
+  </node>
+  <node name="laser_tf_broadcaster" pkg="tf2_ros" type="static_transform_publisher"
+        args="0.16 0 0 0 0 0 base_link laser" />
+
+  <!-- tof camera -->
+  <node machine="tof-camera-pi" name="tof_camera"
+        pkg="ti_tof" type="ti_tof_node"/>
+  <remap from="/tof_transfer/frame" to="/tof_camera/frame" />
+  <node machine="notebook" name="tof_transfer"
+        pkg="ti_tof" type="depth_to_image" output="screen"/>
+  <node name="tof_tf_broadcaster" pkg="tf2_ros" type="static_transform_publisher"
+        args="0.22 0 0 0 0 0 base_link tof" />
+
+  <!-- p2os driver -->
+  <node machine="robot" ns="p2os" name="p2os_driver"
+	pkg="p2os_driver" type="p2os_driver"
+	output="screen">
+    <param name="port" value="/dev/ttyTHS1" /> <!-- interface to p2os-uc -->
+    <param name="use_sonar" value="True" />
+    <param name="pulse" value="1.0" /> <!-- turn annoying beep of -->
+  </node>
+
+
+  <!-- drive control -->
+  <remap from="/teleop/cmd_vel" to="/p2os/cmd_vel" />
+  <node name="teleop" pkg="pioneer_teleop" type="keyboard" output="screen" />
+
+  <!-- enable motors (this node will quit after 3s) -->
+  <node name="rostopic_pub_enable_motors"
+	pkg="rostopic" type="rostopic"
+	args="pub /p2os/cmd_motor_state p2os_msgs/MotorState 1 -1" />
+
+</launch>
