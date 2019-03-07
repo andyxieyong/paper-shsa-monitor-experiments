@@ -18,10 +18,12 @@ from model.monitor import Monitor as SHSAMonitor
 class Emulator(object):
     """Emulates monitor_node.py"""
 
-    def __init__(self):
+    def __init__(self, uncertainty=None):
         # hard-coded path to prolog shsa library -> use docker image!
         self.__monitor = SHSAMonitor("../config/dmin.pl", 'dmin',
-                                     librarypaths=["/python_ws/shsa-prolog/model"])
+                                     librarypaths=["/python_ws/shsa-prolog/model"],
+                                     recollect=False, uncertainty=uncertainty,
+                                     buffer_size=1)
         self.__monitor.set_debug_callback(self.__debug_callback)
 
     @property
@@ -29,101 +31,62 @@ class Emulator(object):
         """Returns the monitor."""
         return self.__monitor
 
-    def __apply_uncertainty(self, itom, t_error, v_error):
-        # make time uncertain
-        assert itom.t is not None
-        ts = itom.t
-        itom.t = interval([ts + t_error[0], ts + t_error[1]])
-        # make value uncertain
-        v = itom.v
-        try:
-            # itom.v is an iterable, apply uncertainty to all elements
-            v = [interval([i + v_error[0], i + v_error[1]]) for i in v]
-        except TypeError as e:
-            v = interval([v + v_error[0], v + v_error[1]])
-        except ComponentError as e:
-            pass
-        itom.v = v
-        return itom
-
-    def apply_uncertainty_model(self, itoms, config):
-        for n, (t, itom) in enumerate(itoms):
-            signal = itom.name
-            t_error = (config[signal]['terr_low'], config[signal]['terr_high'])
-            v_error = (config[signal]['verr_low'], config[signal]['verr_high'])
-            itoms[n] = (t, self.__apply_uncertainty(itom, t_error, v_error))
-        print "[run] applied uncertainty models to {} itoms".format(len(itoms))
-
     def collect_inputs(self, data, period):
         """Collects itoms for monitor steps with given period (in seconds).
 
-        Simulates the reception of itoms.
+        Simulates the reception of itoms between two monitor steps.
 
         """
         # itoms: [(t_reception, itom),..]
         itoms = sorted(data['itoms'], key=lambda msg: msg[0])
         signals = data['signals']
-        # collect an itom of each signal for every monitor step
-        inputs = []
-        port = Itoms()
+        # collect itoms per period
+        inputs = []  # all steps to execute
+        step = []  # itoms for current monitor step
         t_last = itoms[0][0]  # t_reception of first itom
         for n, (t_cur, itom) in enumerate(itoms):
-            # read itom into port
-            port[itom.name] = itom
-            # be sure to have received an itom of every signal
-            if set(port.keys()) != set(signals):
-                continue
-            # ready to execute monitor for the first time
+            step.append(itom)
+            # period over -> start next monitor step
             if t_cur > t_last + period*1e9:
-                inputs.append((t_cur, Itoms(port)))
+                inputs.append((t_cur, Itoms(step)))
+                # reset for next step
+                step = []
                 t_last = t_cur  # current time stamp
         print "[run] number of steps: {}".format(len(inputs))
         return inputs
 
-    def __validate(self, (outputs, error, failed)):
-        assert self.__debug is not None
-        # TODO check reproducability (output is the same like in the ROS run)
-        assert self.__debug['failed'] == failed
-        # reset debug callback
-        self.__debug = None
-
     def __debug_callback(self, inputs, outputs, error, failed):
         self.__debug = {
             'inputs': inputs,
-            'outputs': outputs,
+            'outputs': {sidx: (o.t, o.v) for sidx, o in outputs},
             'error': error,
-            'failed': failed,
         }
 
     def __step(self, itoms):
         """Execute a monitor step."""
         failed = self.__monitor.monitor(itoms)
+        # failed substitution to index
         try:
-            failed = self.__monitor.substitutions.index(failed)
+            failed_idx = self.__monitor.substitutions.index(failed)
         except ValueError as e:
-            failed = -1
-        return self.__debug['outputs'], self.__debug['error'], failed
+            failed_idx = -1
+        # add to debug output
+        self.__debug['failed_idx'] = failed_idx
+        return self.__debug
 
     def run(self, data):
         inputs = data['inputs']
-        manipulated = True
-        # in case align generated the data we have sth to compare to
-        try:
-            self.__manipulated = data['manipulated']
-            exp_outputs = data['outputs']
-            assert len(inputs) == len(outputs)
-        except Exception as e:
-            pass
         # run monitor for each Itoms in inputs
-        act_outputs = []
+        outputs = []
+        print "[run] ..."
         for n, (t, itoms) in enumerate(inputs):
             # execute monitor
             output = self.__step(itoms)
-            act_outputs.append(tuple([t]) + output)
-            # check
-            if not manipulated:
-                self.__validate(exp_outputs[n])
-        return act_outputs
+            output['tm'] = t
+            outputs.append(output)
+        print "[run] done."
+        return outputs
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""Run monitor with given sequence of itoms.""")
@@ -136,20 +99,20 @@ if __name__ == '__main__':
     with open(args.picklefile, 'rb') as f:
         data = pickle.load(f)
 
-    emulator = Emulator()
-
     # apply uncertainties in space and time if a config is available for that
     if args.config:
         with open(args.config, 'r') as ymlfile:
             cfg = yaml.load(ymlfile)
-            emulator.apply_uncertainty_model(data['itoms'], cfg)
+
+    emulator = Emulator(uncertainty=cfg)
 
     # order and split itoms for monitor steps
     data['inputs'] = emulator.collect_inputs(data, 0.1)
 
     # run and save results
-    data['outputs'] = emulator.run(data)
-    data['substitutions'] = emulator.monitor.substitutions
+    result = {}
+    result['outputs'] = emulator.run(data)
+    result['substitutions'] = emulator.monitor.substitutions
 
-    with open(args.picklefile, 'wb') as f:
-        pickle.dump(data, f, protocol=-1)
+    with open("run_" + args.picklefile, 'wb') as f:
+        pickle.dump(result, f, protocol=-1)

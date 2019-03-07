@@ -1,30 +1,37 @@
 # time
 # interval([t_s + terr_low, t_s + terr_high])
 # t_s .. timestamp of the itom
-# terr_* .. allowed error in seconds
+# terr_* .. allowed error in nsec
 
 # space
 # interval([v + verr_low, v + verr_high])
 # verr_* .. allowed error of the value
 
+# USE SAME UNITS AS IN THE MODEL!
+
 /p2os/sonar/ranges:
   # sonar measurement and processing may take up to 10ms
   # 8 sonars sampled consecutively -> 8*10ms
-  terr_low: -0.08
-  terr_high: 0.0
+  terr_low: -80000000  # -0.08
+  terr_high: +0
   # distance measurements vary +/- 0.1 m
-  verr_low: -0.1
-  verr_high: +0.1
+  verr_low: -0.2
+  verr_high: +0.2
+/tof_camera/frame/depth:
+  # 320x240 frame processing takes some time
+  terr_low: -20000000
+  terr_high: +0
+  verr_low: -0.15
+  verr_high: +0.15
 /scan/ranges:
   # lidar scan time 100ms/scan (i.e., first measurement might by 100ms late)
-  terr_low: -0.1
-  terr_high: 0.0
-  # distance measurements vary +/- 0.1 m
-  verr_low: -0.03
-  verr_high: +0.03
+  terr_low: -100000000
+  terr_high: +0
+  verr_low: -0.15
+  verr_high: +0.15
 /emergency_stop/dmin/data:
   # based on lidar + additional processing time
-  terr_low: -0.11
-  terr_high: -0.01
-  verr_low: -0.03
-  verr_high: +0.03
+  terr_low: -110000000
+  terr_high: -10000000
+  verr_low: -0.15
+  verr_high: +0.15

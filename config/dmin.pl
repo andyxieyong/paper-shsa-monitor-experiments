@@ -24,13 +24,17 @@ function(dmin_last, r5, [dmin]).
 %% function(d_3d, rpointcloud2, pointcloud2)
 
 % to create executable substitutions: define implementations of the relations
-implementation(r1, "dmin.v = min(d_2d.v)").
+implementation(r1, "
+dmin.v = min(d_2d.v)
+dmin.t = d_2d.t
+").
 implementation(r2, "
 # row width of depth image
 w = 320
 # take 100th row (about the height of lidar scan)
-h = 100
+h = 115
 d_2d.v = [d for i, d in enumerate(d_3d.v) if i >= h*w and i < (h+1)*w]
+d_2d.t = d_3d.t
 ").
 implementation(r3, "
 # https://answers.ros.org/question/227400/nearest-obstacle-in-map/

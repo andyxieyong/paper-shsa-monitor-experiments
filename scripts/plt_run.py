@@ -7,12 +7,15 @@ __author__ = Denise Ratasich
 """
 
 import argparse
+from interval import interval
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import matplotlib.figure
+import numpy as np
 import pandas as pd
 import pickle
+import yaml
 
 from model.itom import Itom, Itoms
 
@@ -21,6 +24,8 @@ from model.itom import Itom, Itoms
 parser = argparse.ArgumentParser(description="""Plots output of run.py.""")
 parser.add_argument("picklefile", type=str,
                     help="""Data (pickle file) containing sequence of itoms.""")
+parser.add_argument("-u", "--uncertainty", type=str,
+                    help="""Configuration file of the uncertainty model for errorbars.""")
 parser.add_argument('-e', '--export', type=str,
                     help="Export figure to file.")
 args = parser.parse_args()
@@ -34,6 +39,7 @@ with open(args.picklefile, 'rb') as f:
 # prepare data frame
 #
 
+
 # substitutions
 signal2substitution_idx = {}
 substitutions = data['substitutions']
@@ -41,111 +47,122 @@ for n, s in enumerate(substitutions):
     for v in s.vin:
         signal2substitution_idx[v.name] = n
     print "--- s{} ---\n{}".format(n, s)
+print "----------"
 
-def substitution_index(s):
-    global substitutions
-    return substitutions.index(s)
+# offset to original value given uncertainty interval
+offset = {n: (0, 0) for n in range(len(substitutions))}
+terr = {n: [0, 0] for n in range(len(substitutions))}
+verr = {n: [0, 0] for n in range(len(substitutions))}
+
+# uncertainty per substitution
+# (interval has only boundaries, original point is lost != midpoint)
+if args.uncertainty:
+    with open(args.uncertainty, 'r') as ymlfile:
+        uncertainty = yaml.load(ymlfile)
+        for n, s in enumerate(substitutions):
+            assert len(s.vin) == 1
+            i = list(s.vin)[0].name
+            toff = -float(uncertainty[i]['terr_low'])/1e9 # to seconds
+            voff = -uncertainty[i]['verr_low']
+            offset[n] = (toff, voff)
+            terr[n] = [float(uncertainty[i]['terr_low'])/1e9,
+                       float(uncertainty[i]['terr_high'])/1e9]
+            verr[n] = [uncertainty[i]['verr_low'],
+                       uncertainty[i]['verr_high']]
 
 
 # debug outputs of monitor
-# transpose
-time = []  # timestamp of monitor executions
-outputs = []  # outputs per substitution per monitor step
-error = []  # error per substitution
-failed = []  # index of substitution that failed
-itoms = []  # collects all output itoms {'t': ts, }
-for t, o, err, f in data['outputs']:
-    time.append(t)
-    # this conversion works only if
-    # the number of outputs matches the number of substitutions
-    step = {}
-    for sidx, itom in o:
-        try:
-            v = itom.v.midpoint[0][1]
-        except AttributeError as e:
-            v = itom.v
-        step[sidx] = v
-        # save itoms to plot (rectangles) if a timestamp is available
-        if itom.t is None:
-            continue
-        try:
-            itoms.append({'t_lo': itom.t[0][0], 't_hi': itom.t[0][1],
-                          'v_lo': itom.v[0][0], 'v_hi': itom.v[0][1]})
-        except TypeError as e:
-            # no interval
-            itoms.append({'t': itom.t, 'v': itom.v})
-    outputs.append(step)
-    error.append(err)
-    failed.append(f)
-time_start = time[0]
-time = [float(t - time_start)/1e9 for t in time]
-df_error = pd.DataFrame(error, index=time)
-df_failed = pd.DataFrame(failed, index=time)
-itoms = [{'t': float(d['t'] - time_start)/1e9, 'v': d['v']} for d in itoms]
-df_itoms = pd.DataFrame(itoms)
-df_values = pd.DataFrame(outputs, index=time)
+df = pd.DataFrame(data['outputs'])
+
+t0 = df['tm'].iloc[0]
+print "start:", t0
+
+t_rel = lambda t_ns: float(t_ns - t0)/1e9
+
+df['tm'] = df['tm'].apply(t_rel)
+df.set_index('tm', inplace=True)
+
+df_error = pd.DataFrame(df['error'].values.tolist(), index=df.index)
+df_outputs = pd.DataFrame(df['outputs'].values.tolist(), index=df.index)
+
+df_oitoms = {}
+use_tm = {}
+for sidx in df_outputs.columns:
+    dummy = df_outputs[sidx].dropna()
+    df_oitoms[sidx] = pd.DataFrame(dummy.values.tolist(), index=dummy.index,
+                                   columns=['t', 'v'])
+    # prepare data frame for v and t intervals
+    toff, voff = offset[sidx]
+    values = df_oitoms[sidx]['v'].values.tolist()
+    df_oitoms[sidx]['v_orig'] = [v[0][0] + voff for v in values]
+    time = df_oitoms[sidx]['t'].values.tolist()
+    df_oitoms[sidx]['t_orig'] = [t_rel(t[0][0]) + toff for t in time]
+    use_tm[sidx] = False
 
 
 #
 # plot
 #
 
-params = matplotlib.figure.SubplotParams(left=0.1, right=0.98, bottom=0.08, top=0.98, hspace=0.1)
+params = matplotlib.figure.SubplotParams(left=0.08, right=0.98, bottom=0.08, top=0.98, hspace=0.1)
 basecolors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
 lightcolors = [colors.colorConverter.to_rgba(c, alpha=0.3) for c in basecolors]
 
-fig, axes = plt.subplots(4, figsize=(10,8), sharex=True, subplotpars=params)
+fig, axes = plt.subplots(3, figsize=(12,8), sharex=True, subplotpars=params)
 axidx = 0
 
 # plot output values
-for c in df_values.columns:
+for sidx, itoms in df_oitoms.items():
+    t = itoms.index if use_tm[sidx] else itoms['t']
     try:
-        axes[axidx].plot(df_values.index, df_values[c], label="s{}".format(c),
-                         color=basecolors[c], marker='.', linestyle='')
+        axes[axidx].plot(t, itoms['v'], label="s{}".format(sidx),
+                         color=basecolors[sidx], marker='.', linestyle='')
     except ValueError as e:
-        # df_values contains intervals -> plot midpoint and error
-        lo = [v[0][0] for v in df_values[c]]
-        hi = [v[0][1] for v in df_values[c]]
-        mid = [v.midpoint[0][0] for v in df_values[c]]
-        axes[axidx].fill_between(df_values.index, y1=lo, y2=hi, step='pre',
-                                 facecolor=lightcolors[c])
-        axes[axidx].plot(df_values.index, mid, label="s{}".format(c),
-                         color=basecolors[c], marker='.', linestyle='')
-axes[axidx].set_ylabel("dmin\noutput per substitution")
-axes[axidx].legend()
+        # contains intervals -> plot midpoint and error
+        n = len(itoms['v_orig'])
+        xerr = [[-terr[sidx][0]]*n, [terr[sidx][1]]*n]
+        yerr = [[-verr[sidx][0]]*n, [verr[sidx][1]]*n]
+        axes[axidx].errorbar(itoms['t_orig'], itoms['v_orig'],
+                             xerr=xerr, yerr=yerr,
+                             label="s{}".format(sidx),
+                             color=basecolors[sidx], marker='.', linestyle='')
+axes[axidx].set_ylabel("$v_{dmin}$", fontsize=22)
+axes[axidx].set_ylim(bottom=0)
+axes[axidx].legend(loc='lower left')
 
 axidx = axidx + 1
 
-# plot injected faults
-for t0, t1, signal, desc in data['faults']:
-    t0 = (float(t0) - time_start)/1e9
-    t1 = (float(t1) - time_start)/1e9
-    y = signal2substitution_idx[signal]
-    axes[axidx].plot([t0, t1], [y, y], marker='s', linestyle='-', linewidth=2)
-    axes[axidx].text(t0, y-0.5, "{}\n{}".format(signal, desc))
-axes[axidx].set_ylabel("faults injected")
-axes[axidx].set_yticks(range(0, len(substitutions)))
-axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
+if 'faults' in data.keys():
+    # plot injected faults
+    for t0, t1, signal, desc in data['faults']:
+        t0 = (float(t0) - time_start)/1e9
+        t1 = (float(t1) - time_start)/1e9
+        y = signal2substitution_idx[signal]
+        axes[axidx].plot([t0, t1], [y, y], marker='s', linestyle='-', linewidth=2)
+        axes[axidx].text(t0, y-0.5, "{}\n{}".format(signal, desc))
+    axes[axidx].set_ylabel("faults injected", fontsize=18)
+    axes[axidx].set_yticks(range(0, len(substitutions)))
+    axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
+else:
+    # plot error
+    for c in df_error.columns:
+        axes[axidx].plot(df_error.index, df_error[c], label="s{}".format(c),
+                         marker='.', linestyle='')
+    axes[axidx].set_ylabel("error", fontsize=18)
+    axes[axidx].set_ylim(bottom=0)
+    axes[axidx].legend(loc='lower left')
 
 axidx = axidx + 1
 
-# plot error
-for c in df_error.columns:
-    axes[axidx].plot(df_error.index, df_error[c], label="s{}".format(c),
-                     marker='.', linestyle='')
-axes[axidx].set_ylabel("error sum per substitution")
-axes[axidx].legend()
-
-axidx = axidx + 1
-
-# plot failed
-axes[axidx].plot(df_failed.index, df_failed[0],
+# plot failed idx
+axes[axidx].plot(df.index, df['failed_idx'],
                  marker='.', linestyle='-')
-axes[axidx].set_ylabel("index of failed substitution\n(-1 .. ok, none failed)")
+axes[axidx].set_ylabel("failed", fontsize=18)
 axes[axidx].set_yticks(range(-1, len(substitutions)))
 axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
 
-axes[axidx].set_xlabel("time (s)")
+axes[axidx].set_xlim(0,23)
+axes[axidx].set_xlabel("time (s)", fontsize=18)
 
 # save or show figure
 if args.export:

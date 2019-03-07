@@ -46,9 +46,12 @@ print substitutions
 # plot
 #
 
-params = matplotlib.figure.SubplotParams(left=0.08, right=0.98, bottom=0.05, top=0.98, hspace=0.1)
+# 5 plots
+#params = matplotlib.figure.SubplotParams(left=0.08, right=0.98, bottom=0.05, top=0.98, hspace=0.1)
+# 2 plots
+params = matplotlib.figure.SubplotParams(left=0.05, right=0.98, bottom=0.08, top=0.95, hspace=0.1)
 
-fig, axes = plt.subplots(5, figsize=(15,15), sharex=True, subplotpars=params)
+fig, axes = plt.subplots(2, figsize=(15,8), sharex=True, subplotpars=params)
 axidx = 0
 
 # plot cmd_vel
@@ -58,15 +61,15 @@ axes[axidx].plot(dl.index, dl,
                  label="/p2os/cmd_vel/linear/x", marker='.', linestyle='-')
 axes[axidx].plot(da.index, da,
                  label="/p2os/cmd_vel/angular/z", marker='.', linestyle='-')
-axes[axidx].set_ylabel("$v_{cmd}$", fontsize=20)
-axes[axidx].legend()
+axes[axidx].set_ylabel("$v_{cmd}$", fontsize=22)
+axes[axidx].legend(loc='lower left')
 
 axidx = axidx + 1
 
 # plot dmin
 axes[axidx].plot(df.index, df['/emergency_stop/dmin/data'], label="/emergency_stop/dmin/data",
              marker='.', linestyle='')
-axes[axidx].set_ylabel("$v_{dmin}$", fontsize=20)
+axes[axidx].set_ylabel("$v_{dmin}$", fontsize=22)
 axes[axidx].set_ylim(bottom=0)
 # plot dmin hysteresis
 _, xmax = axes[axidx].get_xlim()
@@ -76,46 +79,47 @@ hysteresis = patches.Rectangle((0,bot), xmax, top-bot,
                                edgecolor=c, facecolor=c)
 axes[axidx].add_patch(hysteresis)
 
-axidx = axidx + 1
+# axidx = axidx + 1
 
-# plot outputs
-for o in substitutions:
-    keybot = '/dmin_monitor/debug/outputs/' + o + '/bot'
-    keytop = '/dmin_monitor/debug/outputs/' + o + '/top'
-    yerr = df[keytop] - df[keybot]
-    y = df[keybot] + yerr/2
-    axes[axidx].plot(df.index, y, label="s{}".format(o),
-                     marker='.', linestyle='')
-axes[axidx].set_ylabel("$\mathsf{v}_{dmin}$", fontsize=20)
-axes[axidx].set_ylim(bottom=0)
-axes[axidx].legend()
+# # plot outputs
+# for o in substitutions:
+#     keybot = '/dmin_monitor/debug/outputs/' + o + '/bot'
+#     keytop = '/dmin_monitor/debug/outputs/' + o + '/top'
+#     yerr = df[keytop] - df[keybot]
+#     y = df[keybot] + yerr/2
+#     axes[axidx].plot(df.index, y, label="s{}".format(o),
+#                      marker='.', linestyle='')
+# axes[axidx].set_ylabel("$\mathsf{v}_{dmin}$", fontsize=20)
+# axes[axidx].set_ylim(bottom=0)
+# axes[axidx].legend()
 
-axidx = axidx + 1
+# axidx = axidx + 1
 
-# plot error
-num_s = 0
-for c in df.columns:
-    if '/dmin_monitor/debug/error' in c:
-        split = c.split('/')
-        axes[axidx].plot(df.index, df[c], label="s{}".format(split[-1]),
-                     marker='.', linestyle='')
-        num_s = num_s + 1
-axes[axidx].set_ylabel("error", fontsize=16)
-axes[axidx].set_ylim(bottom=0)
-axes[axidx].legend()
+# # plot error
+# num_s = 0
+# for c in df.columns:
+#     if '/dmin_monitor/debug/error' in c:
+#         split = c.split('/')
+#         axes[axidx].plot(df.index, df[c], label="s{}".format(split[-1]),
+#                      marker='.', linestyle='')
+#         num_s = num_s + 1
+# axes[axidx].set_ylabel("error", fontsize=16)
+# axes[axidx].set_ylim(bottom=0)
+# axes[axidx].legend()
 
-axidx = axidx + 1
+# axidx = axidx + 1
 
-# plot failed
+# # plot failed
 
-d = df['/dmin_monitor/debug/failed'].dropna()
-axes[axidx].plot(d.index, d,
-                 marker='.', linestyle='-')
-axes[axidx].set_ylabel("failed s", fontsize=16)
-axes[axidx].set_yticks(range(-1, num_s))
-axes[axidx].set_ylim(-2, num_s)
+# d = df['/dmin_monitor/debug/failed'].dropna()
+# axes[axidx].plot(d.index, d,
+#                  marker='.', linestyle='-')
+# axes[axidx].set_ylabel("failed s", fontsize=16)
+# axes[axidx].set_yticks(range(-1, num_s))
+# axes[axidx].set_ylim(-2, num_s)
 
 axes[axidx].set_xlabel("time (s)", fontsize=16)
+axes[axidx].set_xlim(right=23)
 
 # save or show figure
 if args.export:

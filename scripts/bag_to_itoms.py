@@ -115,7 +115,11 @@ def convert_to_itom(signal, msg):
     v = msg
     for field in fields:
         v = getattr(v, field)
-    itom = Itom(signal, v, msg.header.stamp.to_nsec(), signal2variable[signal])
+    t = msg.header.stamp.to_nsec()
+    # workaround: fix timestamp (1s to early - clocksync error)
+    if 'emergency_stop/dmin' in signal:
+        t = t + 1.1*1e9
+    itom = Itom(signal, v, t, signal2variable[signal])
     ## COPIED end
     return itom
 
@@ -124,6 +128,9 @@ itoms = []
 for t, topic, msg in msgs:
     # a topic may contain several signals
     for s in topic2signals[topic]:
+        # workaround: fix timestamp (1s to early - clocksync error)
+        if 'emergency_stop/dmin' in s:
+            t = t + 1.1*1e9
         itoms.append((t, convert_to_itom(s, msg)))
 
 print "[bag to itoms] number of itoms: {}".format(len(itoms))
