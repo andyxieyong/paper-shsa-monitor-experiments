@@ -10,6 +10,7 @@ import argparse
 import matplotlib.colors as colors
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 import rosbag_pandas
 
@@ -18,10 +19,12 @@ import rosbag_pandas
 parser = argparse.ArgumentParser(description="""Plots logs of log.launch.""")
 parser.add_argument("bagfile", type=str,
                     help="""Recorded rosbag file containing monitor logs.""")
+parser.add_argument('-e', '--export', type=str,
+                    help="Export figure to file.")
 args = parser.parse_args()
 
 # load data from bag file
-topics = ["/cmd_vel", "/emergency_stop/dmin", "/dmin_monitor/debug"]
+topics = ["/p2os/cmd_vel", "/emergency_stop/dmin", "/dmin_monitor/debug"]
 df = rosbag_pandas.bag_to_dataframe(args.bagfile, include=topics)
 
 # start with time 0 (timedelta to floats)
@@ -43,15 +46,19 @@ print substitutions
 # plot
 #
 
-fig, axes = plt.subplots(5, sharex=True)
+params = matplotlib.figure.SubplotParams(left=0.08, right=0.98, bottom=0.05, top=0.98, hspace=0.1)
+
+fig, axes = plt.subplots(5, figsize=(15,15), sharex=True, subplotpars=params)
 axidx = 0
 
 # plot cmd_vel
-axes[axidx].plot(df.index, df['/cmd_vel/linear/x'],
-                 label="/cmd_vel/linear/x", marker='.', linestyle='')
-axes[axidx].plot(df.index, df['/cmd_vel/angular/z'],
-                 label="/cmd_vel/angular/z", marker='.', linestyle='')
-axes[axidx].set_ylabel("/cmd_vel")
+dl = df['/p2os/cmd_vel/linear/x'].dropna()
+da = df['/p2os/cmd_vel/angular/z'].dropna()
+axes[axidx].plot(dl.index, dl,
+                 label="/p2os/cmd_vel/linear/x", marker='.', linestyle='-')
+axes[axidx].plot(da.index, da,
+                 label="/p2os/cmd_vel/angular/z", marker='.', linestyle='-')
+axes[axidx].set_ylabel("$v_{cmd}$", fontsize=20)
 axes[axidx].legend()
 
 axidx = axidx + 1
@@ -59,7 +66,8 @@ axidx = axidx + 1
 # plot dmin
 axes[axidx].plot(df.index, df['/emergency_stop/dmin/data'], label="/emergency_stop/dmin/data",
              marker='.', linestyle='')
-axes[axidx].set_ylabel("/emergency_stop/dmin")
+axes[axidx].set_ylabel("$v_{dmin}$", fontsize=20)
+axes[axidx].set_ylim(bottom=0)
 # plot dmin hysteresis
 _, xmax = axes[axidx].get_xlim()
 c = (1.0, 0, 0, 0.2)
@@ -76,9 +84,10 @@ for o in substitutions:
     keytop = '/dmin_monitor/debug/outputs/' + o + '/top'
     yerr = df[keytop] - df[keybot]
     y = df[keybot] + yerr/2
-    axes[axidx].errorbar(df.index, y, yerr=yerr, label="s{}".format(o),
+    axes[axidx].plot(df.index, y, label="s{}".format(o),
                      marker='.', linestyle='')
-axes[axidx].set_ylabel("output per substitution")
+axes[axidx].set_ylabel("$\mathsf{v}_{dmin}$", fontsize=20)
+axes[axidx].set_ylim(bottom=0)
 axes[axidx].legend()
 
 axidx = axidx + 1
@@ -91,17 +100,25 @@ for c in df.columns:
         axes[axidx].plot(df.index, df[c], label="s{}".format(split[-1]),
                      marker='.', linestyle='')
         num_s = num_s + 1
-axes[axidx].set_ylabel("error sum per substitution")
+axes[axidx].set_ylabel("error", fontsize=16)
+axes[axidx].set_ylim(bottom=0)
 axes[axidx].legend()
 
 axidx = axidx + 1
 
 # plot failed
-axes[axidx].plot(df.index, df['/dmin_monitor/debug/failed'],
-             marker='.', linestyle='')
-axes[axidx].set_ylabel("index of failed substitution\n(-1 .. ok, none failed)")
+
+d = df['/dmin_monitor/debug/failed'].dropna()
+axes[axidx].plot(d.index, d,
+                 marker='.', linestyle='-')
+axes[axidx].set_ylabel("failed s", fontsize=16)
 axes[axidx].set_yticks(range(-1, num_s))
 axes[axidx].set_ylim(-2, num_s)
 
-axes[axidx].set_xlabel("time (s)")
-plt.show()
+axes[axidx].set_xlabel("time (s)", fontsize=16)
+
+# save or show figure
+if args.export:
+    fig.savefig(args.export)
+else:
+    plt.show()
