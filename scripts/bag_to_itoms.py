@@ -28,16 +28,19 @@ from model.itom import Itom, Itoms
 signal2topic = {
     "/p2os/sonar/ranges": "/p2os/sonar",
     "/scan/ranges": "/scan",
+    "/tof_camera/frame/depth": "/tof_camera/frame",
     "/emergency_stop/dmin/data": "/emergency_stop/dmin",
 }
 topic2signals = {
     "/p2os/sonar": ["/p2os/sonar/ranges"],
     "/scan": ["/scan/ranges"],
+    "/tof_camera/frame": ["/tof_camera/frame/depth"],
     "/emergency_stop/dmin": ["/emergency_stop/dmin/data"],
 }
 signal2variable = {
     "/p2os/sonar/ranges": "d_2d",
     "/scan/ranges": "d_2d",
+    "/tof_camera/frame/depth": "d_3d",
     "/emergency_stop/dmin/data": "dmin",
 }
 signals = signal2topic.keys()
