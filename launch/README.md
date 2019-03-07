@@ -27,27 +27,7 @@ $ docker run --rm -it --network=host \
 
 Enable motors (if necessary):
 ```bash
-$ docker run --rm -it --network=host paper:shsa-prolog roslaunch shsa_ros enablemotors.launch
-```
-
-Set initial pose for SLAM (amcl node) via rviz.
-```bash
-$ x11docker --hostnet --home ros:gui rviz
-```
-To reuse configs for rviz use option `--home` of `x11docker`.
-
-### Switch between tele-operation and wandering
-
-Select tele-operation (default `/teleop/cmd_vel` used):
-
-```bash
-$ docker run --rm -it --network=host paper:shsa-prolog rosrun topic_tools mux_select mux_cmdvel /teleop/cmd_vel
-```
-
-Or wanderer:
-
-```bash
-$ docker run --rm -it --network=host paper:shsa-prolog rosrun topic_tools mux_select mux_cmdvel /wanderer/cmd_vel
+$ docker run --rm -it --network=host paper:shsa-prolog roslaunch demo enablemotors.launch
 ```
 
 

@@ -4,8 +4,7 @@ This repository contains experiments to [shsa-prolog] for the [SASO 2019](https:
 *"Fault Detection exploiting Implicit Redundancy with Uncertainties in Space and Time"*
 
 This is a ROS package that needs our robot [Daisy] to run the [launch files](./launch/README.md).
-However, for the experiments on fault detection,
-see the [scripts](./scripts/README.md) and [experiments](./experiments/README.md).
+However, for the experiments on fault detection which have been performed offline see the [scripts](./scripts/README.md).
 
 A [Docker image](./docker/README.md) is provided for convenience.
 

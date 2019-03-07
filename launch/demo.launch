@@ -20,8 +20,6 @@ Denise Ratasich
   <arg name="robot-pi" default="daisy-pi" />
   <!-- default hostname of the tof camera pi -->
   <arg name="tof-camera-pi" default="tof-rpi" />
-  <!-- map -->
-  <arg name="map" default="$(find demo)/config/map.yaml"/>
 
   <!-- machines -->
   <machine name="notebook" address="$(arg notebook)" default="true"/>
@@ -39,17 +37,6 @@ Denise Ratasich
         pkg="hokuyo_node" type="hokuyo_node" output="screen">
     <param name="port" value="/dev/ttyACM0" />
   </node>
-  <node name="laser_tf_broadcaster" pkg="tf2_ros" type="static_transform_publisher"
-        args="0.16 0 0 0 0 0 base_link laser" />
-
-  <!-- localization -->
-  <node name="amcl" pkg="amcl" type="amcl" output="screen">
-    <param name="scan" value="/scan"/>
-    <param name="update_min_d" value="0.01"/>
-    <param name="update_min_a" value="0.02"/>
-  </node>
-  <node name="map" pkg="map_server" type="map_server"
-        args="$(arg map)" output="screen"/>
 
   <!-- tof camera -->
   <node machine="tof-camera-pi" name="tof_camera"
@@ -67,19 +54,13 @@ Denise Ratasich
 
   <!-- drive control -->
   <node name="teleop" pkg="pioneer_teleop" type="keyboard" output="screen" />
-  <remap from="/wanderer/scan" to="/scan" />
-  <node name="wanderer" pkg="wanderer" type="wanderer.py" output="screen" />
-  <!-- install mux between teleop and wanderer -->
-  <node name="mux_cmdvel" pkg="topic_tools" type="mux"
-        args="/cmd_vel /teleop/cmd_vel /wanderer/cmd_vel mux:=mux_cmdvel"
-        output="screen" />
 
   <!-- collision avoidance -->
   <remap from="/dmin_calculator/scan" to="/scan" />
   <remap from="/dmin_calculator/dmin" to="/emergency_stop/dmin" />
   <node name="dmin_calculator" pkg="emergency_stop" type="dmin_calculator.py"
         output="screen" />
-  <remap from="/emergency_stop/cmd_vel_in" to="/cmd_vel" />
+  <remap from="/emergency_stop/cmd_vel_in" to="/teleop/cmd_vel" />
   <remap from="/emergency_stop/cmd_vel_out" to="/p2os/cmd_vel" />
   <node name="emergency_stop" pkg="emergency_stop" type="emergency_stop.py"
         output="screen">

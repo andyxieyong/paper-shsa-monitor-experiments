@@ -26,8 +26,11 @@ function(dmin_last, r5, [dmin]).
 % to create executable substitutions: define implementations of the relations
 implementation(r1, "dmin.v = min(d_2d.v)").
 implementation(r2, "
-height = int(len(d_3d.v)/2)
-d_2d.v = list(d_3d.v[height])
+# row width of depth image
+w = 320
+# take 100th row (about the height of lidar scan)
+h = 100
+d_2d.v = [d for i, d in enumerate(d_3d.v) if i >= h*w and i < (h+1)*w]
 ").
 implementation(r3, "
 # https://answers.ros.org/question/227400/nearest-obstacle-in-map/
@@ -46,5 +49,4 @@ implementation(r5, "").
 % a mapping to the variables is needed, so we just statically define it here)
 itomsOf(dmin, ["/emergency_stop/dmin/data"]).
 itomsOf(d_2d, ["/scan/ranges", "/p2os/sonar/ranges"]).
-%% itomsOf(pointcloud2, ["/tof/points"]).
-%% itomsOf(pose, ["/amcl_pose"]).
+itomsOf(d_3d, ["/tof_camera/frame/depth"]).
