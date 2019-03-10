@@ -19,8 +19,8 @@
   verr_high: +0.2
 /tof_camera/frame/depth:
   # 320x240 frame processing takes some time
-  terr_low: -20000000
-  terr_high: +0
+  terr_low: -100000000
+  terr_high: +100000000
   verr_low: -0.15
   verr_high: +0.15
 /scan/ranges:

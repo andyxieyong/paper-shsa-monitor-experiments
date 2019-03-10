@@ -26,6 +26,8 @@ parser.add_argument("picklefile", type=str,
                     help="""Data (pickle file) containing sequence of itoms.""")
 parser.add_argument("-u", "--uncertainty", type=str,
                     help="""Configuration file of the uncertainty model for errorbars.""")
+parser.add_argument('-p', '--plot-uncertainty', action='store_true',
+                    help="""Plot uncertainty as error bars.""")
 parser.add_argument('-e', '--export', type=str,
                     help="Export figure to file.")
 args = parser.parse_args()
@@ -38,7 +40,6 @@ with open(args.picklefile, 'rb') as f:
 #
 # prepare data frame
 #
-
 
 # substitutions
 signal2substitution_idx = {}
@@ -119,11 +120,17 @@ for sidx, itoms in df_oitoms.items():
                          color=basecolors[sidx], marker='.', linestyle='')
     except ValueError as e:
         # contains intervals -> plot midpoint and error
-        n = len(itoms['v_orig'])
-        xerr = [[-terr[sidx][0]]*n, [terr[sidx][1]]*n]
-        yerr = [[-verr[sidx][0]]*n, [verr[sidx][1]]*n]
-        axes[axidx].errorbar(itoms['t_orig'], itoms['v_orig'],
-                             xerr=xerr, yerr=yerr,
+        if args.plot_uncertainty:
+            n = len(itoms['v_orig'])
+            xerr = [[-terr[sidx][0]]*n, [terr[sidx][1]]*n]
+            yerr = [[-verr[sidx][0]]*n, [verr[sidx][1]]*n]
+            axes[axidx].errorbar(itoms['t_orig'], itoms['v_orig'],
+                                 xerr=xerr, yerr=yerr,
+                                 label="s{}".format(sidx),
+                                 color=basecolors[sidx],
+                                 marker=markers[sidx], linestyle='')
+        else:
+            axes[axidx].plot(itoms['t_orig'], itoms['v_orig'],
                              label="s{}".format(sidx),
                              color=basecolors[sidx], marker='.', linestyle='')
 axes[axidx].set_ylabel("$v_{dmin}$", fontsize=22)
@@ -134,12 +141,12 @@ axidx = axidx + 1
 
 if 'faults' in data.keys():
     # plot injected faults
-    for t0, t1, signal, desc in data['faults']:
-        t0 = (float(t0) - time_start)/1e9
-        t1 = (float(t1) - time_start)/1e9
+    for ts, te, signal, desc in data['faults']:
         y = signal2substitution_idx[signal]
-        axes[axidx].plot([t0, t1], [y, y], marker='s', linestyle='-', linewidth=2)
-        axes[axidx].text(t0, y-0.5, "{}\n{}".format(signal, desc))
+        axes[axidx].plot([t_rel(ts), t_rel(te)], [y, y],
+                         color=basecolors[y],
+                         marker='s', linestyle='-', linewidth=2)
+        axes[axidx].text(t_rel(ts), y-0.8, "{}".format(desc), fontsize=16)
     axes[axidx].set_ylabel("faults injected", fontsize=18)
     axes[axidx].set_yticks(range(0, len(substitutions)))
     axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)

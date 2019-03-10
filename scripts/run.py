@@ -18,9 +18,9 @@ from model.monitor import Monitor as SHSAMonitor
 class Emulator(object):
     """Emulates monitor_node.py"""
 
-    def __init__(self, uncertainty=None):
+    def __init__(self, model, variable, uncertainty=None):
         # hard-coded path to prolog shsa library -> use docker image!
-        self.__monitor = SHSAMonitor("../config/dmin.pl", 'dmin',
+        self.__monitor = SHSAMonitor(model, variable,
                                      librarypaths=["/python_ws/shsa-prolog/model"],
                                      recollect=False, uncertainty=uncertainty,
                                      buffer_size=1)
@@ -32,14 +32,14 @@ class Emulator(object):
         return self.__monitor
 
     def collect_inputs(self, data, period):
-        """Collects itoms for monitor steps with given period (in seconds).
+        """Collects itoms for monitor steps with given period
+        (in same unit as timestamps of the itoms, e.g., nsec).
 
         Simulates the reception of itoms between two monitor steps.
 
         """
         # itoms: [(t_reception, itom),..]
         itoms = sorted(data['itoms'], key=lambda msg: msg[0])
-        signals = data['signals']
         # collect itoms per period
         inputs = []  # all steps to execute
         step = []  # itoms for current monitor step
@@ -92,7 +92,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""Run monitor with given sequence of itoms.""")
     parser.add_argument("picklefile", type=str,
                         help="""Data (pickle file) containing sequence of itoms.""")
-    parser.add_argument("-c", "--config", type=str,
+    parser.add_argument("-m", "--model", type=str, default="../config/dmin.pl",
+                        help="""Configuration file of the uncertainty model.""")
+    parser.add_argument("-v", "--variable", type=str, default="dmin",
+                        help="""Variable to monitor.""")
+    parser.add_argument("-p", "--period", type=float, default=1e8,
+                        help="""Monitoring period (time between two monitor calls).""")
+    parser.add_argument("-u", "--uncertainty", type=str,
                         help="""Configuration file of the uncertainty model.""")
     args = parser.parse_args()
 
@@ -100,14 +106,15 @@ if __name__ == '__main__':
         data = pickle.load(f)
 
     # apply uncertainties in space and time if a config is available for that
-    if args.config:
-        with open(args.config, 'r') as ymlfile:
-            cfg = yaml.load(ymlfile)
+    uncertainty = None
+    if args.uncertainty:
+        with open(args.uncertainty, 'r') as ymlfile:
+            uncertainty = yaml.load(ymlfile)
 
-    emulator = Emulator(uncertainty=cfg)
+    emulator = Emulator(args.model, args.variable, uncertainty=uncertainty)
 
     # order and split itoms for monitor steps
-    data['inputs'] = emulator.collect_inputs(data, 0.1)
+    data['inputs'] = emulator.collect_inputs(data, args.period)
 
     # run and save results
     result = {}
