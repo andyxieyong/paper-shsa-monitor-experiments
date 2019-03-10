@@ -11,19 +11,19 @@ from interval import interval
 import pickle
 import yaml
 
-from model.itom import Itom, Itoms
+from model.itom import Itom
 from model.monitor import Monitor as SHSAMonitor
 
 
 class Emulator(object):
     """Emulates monitor_node.py"""
 
-    def __init__(self, model, variable, uncertainty=None):
+    def __init__(self, model, variable, uncertainty=None, buffer_size=1):
         # hard-coded path to prolog shsa library -> use docker image!
         self.__monitor = SHSAMonitor(model, variable,
                                      librarypaths=["/python_ws/shsa-prolog/model"],
                                      recollect=False, uncertainty=uncertainty,
-                                     buffer_size=1)
+                                     buffer_size=buffer_size)
         self.__monitor.set_debug_callback(self.__debug_callback)
 
     @property
@@ -46,7 +46,7 @@ class Emulator(object):
         for n, (tr, itom) in enumerate(itoms):
             # period over -> start next monitor step
             if tr > (len(inputs)+1)*period:
-                inputs.append(((len(inputs)+1)*period, Itoms(step)))
+                inputs.append(((len(inputs)+1)*period, step))
                 # reset for next step
                 step = []
             step.append(itom)
@@ -56,7 +56,7 @@ class Emulator(object):
     def __debug_callback(self, inputs, outputs, error, failed):
         self.__debug = {
             'inputs': inputs,
-            'outputs': {sidx: (o.t, o.v) for sidx, o in outputs},
+            'outputs': [{'sidx': sidx, 't': o.t, 'v': o.v} for sidx, o in outputs],
             'error': error,
         }
 
@@ -98,6 +98,12 @@ if __name__ == '__main__':
                         help="""Monitoring period (time between two monitor calls).""")
     parser.add_argument("-u", "--uncertainty", type=str,
                         help="""Configuration file of the uncertainty model.""")
+    parser.add_argument("-b", "--buffer-size", type=int, default=1,
+                        help="""Buffer size of the monitor (number of periods
+                        in which itoms shall be collected for fault
+                        detection).""")
+    parser.add_argument("-o", "--output", type=str, default="run.obj",
+                        help="""Output (pickle object file).""")
     args = parser.parse_args()
 
     with open(args.picklefile, 'rb') as f:
@@ -109,7 +115,8 @@ if __name__ == '__main__':
         with open(args.uncertainty, 'r') as ymlfile:
             uncertainty = yaml.load(ymlfile)
 
-    emulator = Emulator(args.model, args.variable, uncertainty=uncertainty)
+    emulator = Emulator(args.model, args.variable, uncertainty=uncertainty,
+                        buffer_size=args.buffer_size)
 
     # order and split itoms for monitor steps
     data['inputs'] = emulator.collect_inputs(data, args.period)
@@ -128,5 +135,5 @@ if __name__ == '__main__':
 
     result['itoms'] = data['itoms']
 
-    with open("run_" + args.picklefile, 'wb') as f:
+    with open(args.output, 'wb') as f:
         pickle.dump(result, f, protocol=-1)
