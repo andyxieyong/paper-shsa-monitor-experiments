@@ -1,0 +1,28 @@
+# time
+# interval([t_s + terr_low, t_s + terr_high])
+# t_s .. timestamp of the itom
+# terr_* .. allowed error in sec
+
+# space
+# interval([v + verr_low, v + verr_high])
+# verr_* .. allowed error of the value
+
+# USE SAME UNITS AS IN THE MODEL!
+
+/a/data:
+  terr_low: -500000000
+  terr_high: +500000000
+  verr_low: -0.08
+  verr_high: +0.08
+
+/b/data:
+  terr_low: -250000000
+  terr_high: +250000000
+  verr_low: -0.1
+  verr_high: +0.1
+
+/c/data:
+  terr_low: -100000000
+  terr_high: +100000000
+  verr_low: -0.15
+  verr_high: +0.15

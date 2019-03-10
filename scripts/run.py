@@ -43,15 +43,13 @@ class Emulator(object):
         # collect itoms per period
         inputs = []  # all steps to execute
         step = []  # itoms for current monitor step
-        t_last = itoms[0][0]  # t_reception of first itom
-        for n, (t_cur, itom) in enumerate(itoms):
-            step.append(itom)
+        for n, (tr, itom) in enumerate(itoms):
             # period over -> start next monitor step
-            if t_cur > t_last + period*1e9:
-                inputs.append((t_cur, Itoms(step)))
+            if tr > (len(inputs)+1)*period:
+                inputs.append(((len(inputs)+1)*period, Itoms(step)))
                 # reset for next step
                 step = []
-                t_last = t_cur  # current time stamp
+            step.append(itom)
         print "[run] number of steps: {}".format(len(inputs))
         return inputs
 
@@ -120,6 +118,15 @@ if __name__ == '__main__':
     result = {}
     result['outputs'] = emulator.run(data)
     result['substitutions'] = emulator.monitor.substitutions
+
+    # keep info from fault injection if any
+    try:
+        result['manipulated'] = data['manipulated']
+        result['faults'] = data['faults']
+    except KeyError as e:
+        pass
+
+    result['itoms'] = data['itoms']
 
     with open("run_" + args.picklefile, 'wb') as f:
         pickle.dump(result, f, protocol=-1)
