@@ -53,7 +53,9 @@ Execute the `ex_*.sh` scripts and plot.
 $ ./ex_monitorlog.sh
 $ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_run.py -u ~/config/uncertainty.yaml -p ~/scripts/run.obj
 # generic value
+$ ./ex_generic_value.sh
 $ x11docker --homedir /path/to/shsa/src/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_value.py -u ~/config/generic.yaml -p ~/scripts/run.obj
 # generic time
+$ ./ex_generic_time.sh
 $ x11docker --homedir /path/to/shsa/src/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_time.py -u ~/config/generic.yaml -p -e ~/scripts/ex_generic_time.pdf ~/scripts/run_gt1.obj ~/scripts/run_gt2.obj
 ```

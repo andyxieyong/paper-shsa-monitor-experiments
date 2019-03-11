@@ -106,16 +106,20 @@ df_oitoms = oitoms(df)
 # plot
 #
 
-params = matplotlib.figure.SubplotParams(left=0.05, right=0.99, bottom=0.05, top=0.98, hspace=0.1)
+font = {'family' : 'normal',
+        'size'   : 22}
+matplotlib.rc('font', **font)
+
+params = matplotlib.figure.SubplotParams(left=0.06, right=0.99, bottom=0.08, top=0.98, hspace=0.1)
 basecolors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
-markers = ['o', 's', 'd']
+markers = ['o', 's', 'd', 'v']
 lightcolors = [colors.colorConverter.to_rgba(c, alpha=0.3) for c in basecolors]
 
 fig, axes = plt.subplots(3, figsize=(16,12), sharex=True, subplotpars=params)
 axidx = 0
 
 # plot output values
-for sidx in [0, 1, 2]:
+for sidx in [0, 1, 2, 3]:
     is_sidx = (df_oitoms['sidx'] == sidx)
     df2plt = df_oitoms[is_sidx]
     n = len(df2plt['v_orig'])
@@ -125,7 +129,7 @@ for sidx in [0, 1, 2]:
                          xerr=xerr, yerr=yerr,
                          label="s{}".format(sidx), color=basecolors[sidx],
                          marker=markers[sidx], linestyle='')
-axes[axidx].set_ylabel("output", fontsize=18)
+axes[axidx].set_ylabel("output")
 axes[axidx].set_ylim(-0.2,2.5)
 axes[axidx].legend(loc='lower left')
 
@@ -138,16 +142,16 @@ if data['manipulated']:
         axes[axidx].plot([t_rel(ts), t_rel(te)], [y, y],
                          color=basecolors[y],
                          marker='s', linestyle='-', linewidth=2)
-        axes[axidx].text(t_rel(ts), y-0.8, "{}".format(desc), fontsize=16)
-    axes[axidx].set_ylabel("faults injected", fontsize=18)
+        axes[axidx].text(t_rel(ts), y-0.8, "{}".format(desc))
+    axes[axidx].set_ylabel("faults injected")
     axes[axidx].set_yticks(range(0, len(substitutions)))
     axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
 else:
     # plot error
     for c in df_error.columns:
         axes[axidx].plot(df_error.index, df_error[c], label="s{}".format(c),
-                         marker='.', linestyle='')
-    axes[axidx].set_ylabel("error", fontsize=18)
+                         marker=markers[int(c)], linestyle='')
+    axes[axidx].set_ylabel("error")
     axes[axidx].set_ylim(bottom=0)
     axes[axidx].legend(loc='lower left')
 
@@ -156,13 +160,13 @@ axidx = axidx + 1
 # plot failed idx
 axes[axidx].plot(df.index, df['failed_idx'],
                  marker='.', linestyle='-')
-axes[axidx].set_ylabel("failed", fontsize=18)
+axes[axidx].set_ylabel("failed")
 axes[axidx].set_yticks(range(-1, len(substitutions)))
 axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
 
 axes[axidx].set_xlim(0,23)
 axes[axidx].set_xticks(range(0,23))
-axes[axidx].set_xlabel("time (s)", fontsize=18)
+axes[axidx].set_xlabel("time (s)")
 
 # save or show figure
 if args.export:
