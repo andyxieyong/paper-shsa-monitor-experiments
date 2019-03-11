@@ -31,22 +31,20 @@ class Emulator(object):
         """Returns the monitor."""
         return self.__monitor
 
-    def collect_inputs(self, data, period):
+    def collect_inputs(self, itoms, period, t_start=0):
         """Collects itoms for monitor steps with given period
         (in same unit as timestamps of the itoms, e.g., nsec).
 
         Simulates the reception of itoms between two monitor steps.
 
         """
-        # itoms: [(t_reception, itom),..]
-        itoms = sorted(data['itoms'], key=lambda msg: msg[0])
         # collect itoms per period
         inputs = []  # all steps to execute
         step = []  # itoms for current monitor step
         for n, (tr, itom) in enumerate(itoms):
             # period over -> start next monitor step
-            if tr > (len(inputs)+1)*period:
-                inputs.append(((len(inputs)+1)*period, step))
+            if tr > t_start + (len(inputs)+1)*period:
+                inputs.append((t_start + (len(inputs)+1)*period, step))
                 # reset for next step
                 step = []
             step.append(itom)
@@ -102,6 +100,10 @@ if __name__ == '__main__':
                         help="""Buffer size of the monitor (number of periods
                         in which itoms shall be collected for fault
                         detection).""")
+    parser.add_argument("-s", "--start", action='store_true',
+                        help="""Use the lowest reception timestamp of a message
+                        as starting point for the monitor. Otherwise 0 is
+                        used.""")
     parser.add_argument("-o", "--output", type=str, default="run.obj",
                         help="""Output (pickle object file).""")
     args = parser.parse_args()
@@ -119,7 +121,12 @@ if __name__ == '__main__':
                         buffer_size=args.buffer_size)
 
     # order and split itoms for monitor steps
-    data['inputs'] = emulator.collect_inputs(data, args.period)
+    # sort itoms by reception time: [(t_reception, itom),..]
+    itoms = sorted(data['itoms'], key=lambda msg: msg[0])
+    t_start = 0
+    if args.start:
+        t_start = itoms[0][0]
+    data['inputs'] = emulator.collect_inputs(itoms, args.period, t_start=t_start)
 
     # run and save results
     result = {}

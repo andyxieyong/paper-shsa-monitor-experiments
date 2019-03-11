@@ -43,3 +43,17 @@ Plot monitor output
 $ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ paper:shsa-prolog -- \
     ~/scripts/plt_run.py -e ~/scripts/fig.pdf ~/scripts/latest.bag.obj
 ```
+
+Experiments in the Paper
+------------------------
+
+Execute the `ex_*.sh` scripts and plot.
+```bash
+# monitor on rover logs
+$ ./ex_monitorlog.sh
+$ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_run.py -u ~/config/uncertainty.yaml -p ~/scripts/run.obj
+# generic value
+$ x11docker --homedir /path/to/shsa/src/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_value.py -u ~/config/generic.yaml -p ~/scripts/run.obj
+# generic time
+$ x11docker --homedir /path/to/shsa/src/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_time.py -u ~/config/generic.yaml -p -e ~/scripts/ex_generic_time.pdf ~/scripts/run_gt1.obj ~/scripts/run_gt2.obj
+```

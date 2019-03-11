@@ -72,7 +72,7 @@ if args.uncertainty:
                        uncertainty[i]['verr_high']]
 
 
-# debug outputs of monitor
+# debug outputs of monitor (monitor timeline)
 df = pd.DataFrame(data['outputs'])
 
 t0 = df['tm'].iloc[0]
@@ -86,60 +86,52 @@ df.set_index('tm', inplace=True)
 df_error = pd.DataFrame(df['error'].values.tolist(), index=df.index)
 df_outputs = pd.DataFrame(df['outputs'].values.tolist(), index=df.index)
 
-df_oitoms = {}
-use_tm = {}
-for sidx in df_outputs.columns:
-    dummy = df_outputs[sidx].dropna()
-    df_oitoms[sidx] = pd.DataFrame(dummy.values.tolist(), index=dummy.index,
-                                   columns=['t', 'v'])
-    # prepare data frame for v and t intervals
-    toff, voff = offset[sidx]
-    values = df_oitoms[sidx]['v'].values.tolist()
-    df_oitoms[sidx]['v_orig'] = [v[0][0] + voff for v in values]
-    time = df_oitoms[sidx]['t'].values.tolist()
-    df_oitoms[sidx]['t_orig'] = [t_rel(t[0][0]) + toff for t in time]
-    use_tm[sidx] = False
+def oitoms(df):
+    df_oitoms = []
+    for tidx, oinfo in enumerate(df['outputs'].values.tolist()):
+        for o in oinfo:
+            # save related timestamp of monitor call
+            o['tm'] = df.index[tidx]
+            # prepare data frame for v and t intervals
+            toff, voff = offset[o['sidx']]
+            o['v_orig'] = o['v'][0][0] + voff
+            o['t_orig'] = t_rel(o['t'][0][0] + toff)
+            df_oitoms.append(o)
+    return pd.DataFrame(df_oitoms)
+
+df_oitoms = oitoms(df)
 
 
 #
 # plot
 #
 
-params = matplotlib.figure.SubplotParams(left=0.08, right=0.98, bottom=0.08, top=0.98, hspace=0.1)
+params = matplotlib.figure.SubplotParams(left=0.05, right=0.99, bottom=0.05, top=0.98, hspace=0.1)
 basecolors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
+markers = ['o', 's', 'd']
 lightcolors = [colors.colorConverter.to_rgba(c, alpha=0.3) for c in basecolors]
 
-fig, axes = plt.subplots(3, figsize=(12,8), sharex=True, subplotpars=params)
+fig, axes = plt.subplots(3, figsize=(16,12), sharex=True, subplotpars=params)
 axidx = 0
 
 # plot output values
-for sidx, itoms in df_oitoms.items():
-    t = itoms.index if use_tm[sidx] else itoms['t']
-    try:
-        axes[axidx].plot(t, itoms['v'], label="s{}".format(sidx),
-                         color=basecolors[sidx], marker='.', linestyle='')
-    except ValueError as e:
-        # contains intervals -> plot midpoint and error
-        if args.plot_uncertainty:
-            n = len(itoms['v_orig'])
-            xerr = [[-terr[sidx][0]]*n, [terr[sidx][1]]*n]
-            yerr = [[-verr[sidx][0]]*n, [verr[sidx][1]]*n]
-            axes[axidx].errorbar(itoms['t_orig'], itoms['v_orig'],
-                                 xerr=xerr, yerr=yerr,
-                                 label="s{}".format(sidx),
-                                 color=basecolors[sidx],
-                                 marker=markers[sidx], linestyle='')
-        else:
-            axes[axidx].plot(itoms['t_orig'], itoms['v_orig'],
-                             label="s{}".format(sidx),
-                             color=basecolors[sidx], marker='.', linestyle='')
-axes[axidx].set_ylabel("$v_{dmin}$", fontsize=22)
-axes[axidx].set_ylim(bottom=0)
+for sidx in [0, 1, 2]:
+    is_sidx = (df_oitoms['sidx'] == sidx)
+    df2plt = df_oitoms[is_sidx]
+    n = len(df2plt['v_orig'])
+    xerr = [[-terr[sidx][0]]*n, [terr[sidx][1]]*n]
+    yerr = [[-verr[sidx][0]]*n, [verr[sidx][1]]*n]
+    axes[axidx].errorbar(df2plt['t_orig'], df2plt['v_orig'],
+                         xerr=xerr, yerr=yerr,
+                         label="s{}".format(sidx), color=basecolors[sidx],
+                         marker=markers[sidx], linestyle='')
+axes[axidx].set_ylabel("output", fontsize=18)
+axes[axidx].set_ylim(-0.2,2.5)
 axes[axidx].legend(loc='lower left')
 
 axidx = axidx + 1
 
-if 'faults' in data.keys():
+if data['manipulated']:
     # plot injected faults
     for ts, te, signal, desc in data['faults']:
         y = signal2substitution_idx[signal]
@@ -169,6 +161,7 @@ axes[axidx].set_yticks(range(-1, len(substitutions)))
 axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
 
 axes[axidx].set_xlim(0,23)
+axes[axidx].set_xticks(range(0,23))
 axes[axidx].set_xlabel("time (s)", fontsize=18)
 
 # save or show figure

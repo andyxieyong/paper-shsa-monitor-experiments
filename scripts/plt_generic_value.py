@@ -124,6 +124,19 @@ lightcolors = [colors.colorConverter.to_rgba(c, alpha=0.3) for c in basecolors]
 fig, axes = plt.subplots(4, figsize=(16,12), sharex=True, subplotpars=params)
 axidx = 0
 
+# plot injected faults
+for ts, te, signal, desc in data['faults']:
+    y = signal2substitution_idx[signal]
+    axes[axidx].plot([t_rel(ts), t_rel(te)], [y, y],
+                     color=basecolors[y],
+                     marker='s', linestyle='-', linewidth=2)
+    axes[axidx].text(t_rel(ts), y-0.5, "{}".format(desc), fontsize=16)
+axes[axidx].set_ylabel("faults injected", fontsize=18)
+axes[axidx].set_yticks(range(0, len(substitutions)))
+axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
+
+axidx = axidx + 1
+
 # plot itoms with reception time
 for sidx in [0, 1, 2]:
     is_sidx = df_itoms['s'] == sidx
@@ -163,28 +176,6 @@ for sidx, itoms in df_oitoms.items():
 axes[axidx].set_ylabel("output", fontsize=18)
 axes[axidx].set_ylim(-0.2,2.5)
 axes[axidx].legend(loc='lower left')
-
-axidx = axidx + 1
-
-if 'faults' in data.keys():
-    # plot injected faults
-    for ts, te, signal, desc in data['faults']:
-        y = signal2substitution_idx[signal]
-        axes[axidx].plot([t_rel(ts), t_rel(te)], [y, y],
-                         color=basecolors[y],
-                         marker='s', linestyle='-', linewidth=2)
-        axes[axidx].text(t_rel(ts), y-0.5, "{}".format(desc), fontsize=16)
-    axes[axidx].set_ylabel("faults injected", fontsize=18)
-    axes[axidx].set_yticks(range(0, len(substitutions)))
-    axes[axidx].set_ylim(-1.5, len(substitutions)-0.5)
-else:
-    # plot error
-    for c in df_error.columns:
-        axes[axidx].plot(df_error.index, df_error[c], label="s{}".format(c),
-                         marker='.', linestyle='')
-    axes[axidx].set_ylabel("error", fontsize=18)
-    axes[axidx].set_ylim(bottom=0)
-    axes[axidx].legend(loc='lower left')
 
 axidx = axidx + 1
 
