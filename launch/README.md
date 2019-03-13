@@ -15,8 +15,6 @@ Used router to connect to the hosts on the rover
 
 ## Application
 
-**Create a map before you start the demo.**
-
 Start application, [Daisy] starts moving around (turning when it comes near an obstacle):
 ```bash
 $ docker run --rm -it --network=host \
@@ -84,33 +82,7 @@ $ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiment
 ```
 
 
-## Create a Map
-
-```bash
-$ docker run --rm -it --network=host \
-    -v /home/denise/.ssh/:/root/.ssh/ \
-    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
-    paper:shsa-prolog roslaunch demo create_map.launch notebook:=<your hostname>
-```
-
-Visualize map ([docker GUI image]):
-```bash
-$ x11docker --hostnet --home ros:gui rviz
-```
-When rviz is running with the `--home` option
-you can copy the config from `config/create_map.rviz` to `~/x11docker/ros/.rviz/`
-so you can open it in rviz.
-
-Save map:
-```bash
-$ docker run --rm -it --network=host \
-    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/demo/
-    paper:shsa-prolog rosrun map_server map_saver -f /demo/config/map
-```
-Adapt the image path in `map.yaml` to `./map.pgm`.
-
-
-[custom docker image]: ./docker/README.md
+[custom docker image]: ../docker/README.md
 [docker GUI image]: https://github.com/dratasich/docker/ros-gui
 [Daisy]: https://tuw-cpsg.github.io/tutorials/daisy/
 [SHSA]: https://github.com/dratasich/shsa_ros

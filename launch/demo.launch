@@ -2,8 +2,7 @@
 
 Launches SHSA demonstration.
 
-Needs pioneer_teleop, emergency_stop (pkg: general-ros-modules) and
-amcl, map_server for localization (pkg: navigation).
+Needs pioneer_teleop, emergency_stop (pkg: general-ros-modules).
 Source the workspace containing general-ros-modules.
 
 2019-02-18

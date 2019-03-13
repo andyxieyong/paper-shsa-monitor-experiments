@@ -13,7 +13,6 @@
   <exec_depend>p2os</exec_depend>
   <exec_depend>hokuyo_node</exec_depend>
   <exec_depend>pioneer_teleop</exec_depend>
-  <exec_depend>gmapping</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>shsa_ros</exec_depend>
 
