@@ -1,9 +1,12 @@
 # Demo Commands
 
-Uses [custom docker image] for demos with [SHSA] and [Daisy].
-
 The commands below demonstrate [shsa-prolog] for the [SASO 2019](https://saso2019.cs.umu.se/) paper:
 *"Fault Detection exploiting Implicit Redundancy with Uncertainties in Space and Time"*
+
+Prerequisites:
+
+* Build [custom docker image] for demos with [SHSA] and [Daisy].
+* Clone this repository (`/path/to/paper-shsa-monitor-experiments`).
 
 
 ## Network

@@ -43,9 +43,6 @@ ADD https://api.github.com/repos/eurogroep/rosbag_pandas/compare/master...HEAD /
 RUN git clone https://github.com/eurogroep/rosbag_pandas.git
 ADD https://api.github.com/repos/uos/rospy_message_converter/compare/master...HEAD /dev/null
 RUN git clone https://github.com/uos/rospy_message_converter.git
-# # this demo repo for the experiments
-# ADD https://api.github.com/repos/tuw-cpsg/paper-shsa-monitor-experiments/compare/master...HEAD /dev/null
-# RUN git clone https://github.com/tuw-cpsg/paper-shsa-monitor-experiments.git
 
 # build custom ROS packages
 WORKDIR /catkin_ws
