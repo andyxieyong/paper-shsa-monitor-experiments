@@ -46,10 +46,14 @@ print substitutions
 # plot
 #
 
+font = {'family' : 'normal',
+        'size'   : 26}
+matplotlib.rc('font', **font)
+
 # 5 plots
 #params = matplotlib.figure.SubplotParams(left=0.08, right=0.98, bottom=0.05, top=0.98, hspace=0.1)
 # 2 plots
-params = matplotlib.figure.SubplotParams(left=0.05, right=0.98, bottom=0.08, top=0.95, hspace=0.1)
+params = matplotlib.figure.SubplotParams(left=0.1, right=0.98, bottom=0.12, top=0.95, hspace=0.1)
 
 fig, axes = plt.subplots(2, figsize=(15,8), sharex=True, subplotpars=params)
 axidx = 0
@@ -60,17 +64,18 @@ da = df['/p2os/cmd_vel/angular/z'].dropna()
 axes[axidx].plot(dl.index, dl,
                  label="/p2os/cmd_vel/linear/x", marker='.', linestyle='-')
 axes[axidx].plot(da.index, da,
-                 label="/p2os/cmd_vel/angular/z", marker='.', linestyle='-')
-axes[axidx].set_ylabel("$v_{cmd}$", fontsize=22)
-axes[axidx].legend(loc='lower left')
+                 label="/p2os/cmd_vel/angular/z", marker='.', linestyle='-.')
+axes[axidx].set_ylabel("$v_{cmd}$", fontsize=30)
+axes[axidx].legend(loc='lower left', fontsize=26)
 
 axidx = axidx + 1
 
 # plot dmin
 axes[axidx].plot(df.index, df['/emergency_stop/dmin/data'], label="/emergency_stop/dmin/data",
              marker='.', linestyle='')
-axes[axidx].set_ylabel("$v_{dmin}$", fontsize=22)
+axes[axidx].set_ylabel("$v_{dmin}$", fontsize=30)
 axes[axidx].set_ylim(bottom=0)
+axes[axidx].set_yticks([0,0.5,1,1.5])
 # plot dmin hysteresis
 _, xmax = axes[axidx].get_xlim()
 c = (1.0, 0, 0, 0.2)
@@ -118,7 +123,7 @@ axes[axidx].add_patch(hysteresis)
 # axes[axidx].set_yticks(range(-1, num_s))
 # axes[axidx].set_ylim(-2, num_s)
 
-axes[axidx].set_xlabel("time (s)", fontsize=16)
+axes[axidx].set_xlabel("time (s)")
 axes[axidx].set_xlim(right=23)
 
 # save or show figure

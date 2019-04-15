@@ -71,8 +71,8 @@ for tr, itom in itoms:
             v = [d for i, d in enumerate(itom.v) if i >= h*w and i < (h+1)*w]
         distance[itom.name] = list(v)
         num_ranges = len(v)
-        index[itom.name] = np.linspace(-fov[itom.name]/2*invert[itom.name],
-                                       fov[itom.name]/2*invert[itom.name], num=num_ranges)
+        index[itom.name] = np.linspace(fov[itom.name]/2*invert[itom.name],
+                                       -fov[itom.name]/2*invert[itom.name], num=num_ranges)
         if len(distance.keys()) >= 3:
             break # all different itoms collected
 
@@ -88,7 +88,11 @@ print "number of distance measurements:", len(distance)
 # plot
 #
 
-params = matplotlib.figure.SubplotParams(left=0.08, right=0.95, bottom=0.12, top=0.95, hspace=0.1)
+font = {'family' : 'normal',
+        'size'   : 16}
+matplotlib.rc('font', **font)
+
+params = matplotlib.figure.SubplotParams(left=0.05, right=0.95, bottom=0.12, top=0.95, hspace=0.1)
 
 fig = plt.figure(figsize=(10,5), subplotpars=params)
 
@@ -99,7 +103,7 @@ plt.xlim(-180, 180)
 plt.xticks(range(-180, 180+45, 45))
 plt.ylabel("distance (m)")
 plt.ylim(0, 5)
-plt.legend()
+plt.legend(loc='upper left', fontsize=16)
 
 # save or show figure
 if args.export:

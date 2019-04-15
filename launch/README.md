@@ -11,9 +11,10 @@ Prerequisites:
 
 ## Network
 
-Notebook has to be time-synchronized with [Daisy] (because the demo uses transforms).
+Notebook has to be time-synchronized with [Daisy]
+(because the demo uses transforms and timestamps are essential for the SHSA monitor).
 Used router to connect to the hosts on the rover
-(but NTP could be established with IP forwarding too).
+(however, NTP could be established with IP forwarding too).
 
 
 ## Application
@@ -21,14 +22,16 @@ Used router to connect to the hosts on the rover
 Start application, [Daisy] starts moving around (turning when it comes near an obstacle):
 ```bash
 $ docker run --rm -it --network=host \
-    -v /home/denise/.ssh/:/root/.ssh/ \
-    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
+    -v /home/<username>/.ssh/:/root/.ssh/ \
+    -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
     paper:shsa-prolog roslaunch demo demo.launch notebook:=<your hostname>
 ```
 
 Enable motors (if necessary):
 ```bash
-$ docker run --rm -it --network=host paper:shsa-prolog roslaunch demo enablemotors.launch
+$ docker run --rm -it --network=host \
+    -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
+    paper:shsa-prolog roslaunch demo enablemotors.launch
 ```
 
 
@@ -37,7 +40,7 @@ $ docker run --rm -it --network=host paper:shsa-prolog roslaunch demo enablemoto
 Start monitoring:
 ```bash
 $ docker run --rm -it --network=host \
-    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
+    -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
     paper:shsa-prolog roslaunch demo monitor.launch
 ```
 
@@ -46,7 +49,7 @@ $ docker run --rm -it --network=host \
 
 ```bash
 $ docker run --rm -it --network=host \
-    -v /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
+    -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo/ \
     paper:shsa-prolog roslaunch demo log.launch
 ```
 
@@ -61,11 +64,12 @@ Run `visualization.launch` and rviz:
 ```bash
 $ x11docker --hostnet ros:gui rviz
 ```
-To reuse configs for rviz use additional option
+To reuse configs (`visualization.rviz`) for rviz use additional option
 `--homedir /path/to/paper-shsa-monitor-experiments` of `x11docker`.
 
 Other:
 ```bash
+$ x11docker --hostnet --homedir /path/to/paper-shsa-monitor-experiments ros:gui rviz -d ~/config/visualization.rviz
 $ x11docker --hostnet ros:gui rqt_plot /emergency_stop/dmin/data /dmin_monitor/value_0/data /dmin_monitor/value_1/data
 $ x11docker --hostnet ros:gui rqt_graph
 $ x11docker --hostnet ros:gui rosrun rqt_tf_tree rqt_tf_tree
@@ -74,13 +78,13 @@ $ x11docker --hostnet ros:gui rosrun rqt_tf_tree rqt_tf_tree
 ### Plot logged data
 
 ```bash
-$ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments \
+$ x11docker --homedir /path/to/paper-shsa-monitor-experiments \
     paper:shsa-prolog ~/plot/plt_monitor.py ~/log/topics_<timestamp>.bag
 ```
 
 Plot specific signals with:
 ```bash
-$ x11docker --homedir /home/denise/ws/ros/shsa/src/paper-shsa-monitor-experiments/ \
+$ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ \
     paper:shsa-prolog -- bag_plot -b ~/log/topics_<timestamp>.bag -k /dmin_monitor/debug/outputs/0/bot /dmin_monitor/debug/outputs/1/bot /dmin_monitor/debug/outputs/2/bot
 ```
 

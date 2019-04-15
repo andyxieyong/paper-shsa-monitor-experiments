@@ -1,12 +1,13 @@
 Scripts
 =======
 
+
 Plot logged bag file
 --------------------
 
 ```bash
 $ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ \
-    paper:shsa-prolog ~/scripts/plt_log.py ~/log/a.bag
+    paper:shsa-prolog -- ~/scripts/plt_log.py ~/log/latest.bag
 ```
 
 Fault injection to logged bag file
@@ -14,23 +15,23 @@ Fault injection to logged bag file
 
 Convert logged ROS data (bag file created with log.launch)
 to a pickle file that can be fed to the monitor via the `run.py` script.
-It converts input signal messages to a list of `Itoms` objects that can be subsequently checked by the monitor.
+It converts input signal messages to a list of `Itom` objects that can be subsequently checked by the monitor.
 ```bash
-$ docker --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
-    paper:shsa-prolog /catkin_ws/src/demo/scripts/bag_to_itoms.py -h
+$ docker run --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
+    paper:shsa-prolog -- /catkin_ws/src/demo/scripts/bag_to_itoms.py -h
 ```
 
 Fault injection:
 ```bash
-$ docker --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
-    paper:shsa-prolog /catkin_ws/src/demo/scripts/fault_injection.py -h
+$ docker run --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
+    paper:shsa-prolog -- /catkin_ws/src/demo/scripts/fault_injection.py -h
 ```
 
 Run monitor stand-alone (without ROS)
 -------------------------------------
 
 ```bash
-$ docker --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
+$ docker run --rm -it -v /path/to/paper-shsa-monitor-experiments/:/catkin_ws/src/demo \
     paper:shsa-prolog /catkin_ws/src/demo/scripts/run.py -h
 ```
 
@@ -54,8 +55,8 @@ $ ./ex_monitorlog.sh
 $ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_run.py -u ~/config/uncertainty.yaml -p ~/scripts/run.obj
 # generic value
 $ ./ex_generic_value.sh
-$ x11docker --homedir /path/to/shsa/src/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_value.py -u ~/config/generic.yaml -p ~/scripts/run.obj
+$ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_value.py -u ~/config/generic.yaml -p ~/scripts/run.obj
 # generic time
 $ ./ex_generic_time.sh
-$ x11docker --homedir /path/to/shsa/src/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_time.py -u ~/config/generic.yaml -p -e ~/scripts/ex_generic_time.pdf ~/scripts/run_gt1.obj ~/scripts/run_gt2.obj
+$ x11docker --homedir /path/to/paper-shsa-monitor-experiments/ paper:shsa-prolog -- ~/scripts/plt_generic_time.py -u ~/config/generic.yaml -p ~/scripts/run_gt1.obj ~/scripts/run_gt2.obj
 ```
